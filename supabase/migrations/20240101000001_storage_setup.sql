@@ -10,27 +10,58 @@ VALUES (
     ARRAY['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/m4a', 'audio/x-m4a']
 ) ON CONFLICT (id) DO NOTHING;
 
--- Storage policies for audio files
-CREATE POLICY "Authenticated users can upload audio files" ON storage.objects
-    FOR INSERT WITH CHECK (
-        bucket_id = 'audio-files' 
-        AND auth.role() = 'authenticated'
-    );
-
-CREATE POLICY "Users can view their own audio files" ON storage.objects
-    FOR SELECT USING (
-        bucket_id = 'audio-files' 
-        AND auth.uid()::text = (storage.foldername(name))[1]
-    );
-
-CREATE POLICY "Users can update their own audio files" ON storage.objects
-    FOR UPDATE USING (
-        bucket_id = 'audio-files' 
-        AND auth.uid()::text = (storage.foldername(name))[1]
-    );
-
-CREATE POLICY "Users can delete their own audio files" ON storage.objects
-    FOR DELETE USING (
-        bucket_id = 'audio-files' 
-        AND auth.uid()::text = (storage.foldername(name))[1]
-    );
+-- Storage policies for audio files (idempotent)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND schemaname = 'storage'
+        AND policyname = 'Authenticated users can upload audio files'
+    ) THEN
+        CREATE POLICY "Authenticated users can upload audio files" ON storage.objects
+            FOR INSERT WITH CHECK (
+                bucket_id = 'audio-files' 
+                AND auth.role() = 'authenticated'
+            );
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND schemaname = 'storage'
+        AND policyname = 'Users can view their own audio files'
+    ) THEN
+        CREATE POLICY "Users can view their own audio files" ON storage.objects
+            FOR SELECT USING (
+                bucket_id = 'audio-files' 
+                AND auth.uid()::text = (storage.foldername(name))[1]
+            );
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND schemaname = 'storage'
+        AND policyname = 'Users can update their own audio files'
+    ) THEN
+        CREATE POLICY "Users can update their own audio files" ON storage.objects
+            FOR UPDATE USING (
+                bucket_id = 'audio-files' 
+                AND auth.uid()::text = (storage.foldername(name))[1]
+            );
+    END IF;
+    
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'objects' 
+        AND schemaname = 'storage'
+        AND policyname = 'Users can delete their own audio files'
+    ) THEN
+        CREATE POLICY "Users can delete their own audio files" ON storage.objects
+            FOR DELETE USING (
+                bucket_id = 'audio-files' 
+                AND auth.uid()::text = (storage.foldername(name))[1]
+            );
+    END IF;
+END $$;

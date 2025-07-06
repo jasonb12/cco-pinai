@@ -1,196 +1,345 @@
-# Audio Transcript MCP Processing App
+# Audio Transcript MCP with Limitless.ai Integration
 
-A React Native app built with Expo that processes audio transcripts using MCP (Model Context Protocol) servers, featuring offline-first architecture and real-time updates.
+A full-stack application that combines audio file transcription with Limitless.ai lifelog synchronization. Built with React Native (Expo), FastAPI, and Supabase.
 
-## Architecture
+## 🚀 Features
 
-The app follows this flow:
-```
-Expo App → FastAPI Backend → MCPM → MCP Server
-    ↓           ↓
-Supabase ← WebSocket Connection
-```
-
-## Features
-
-- **Authentication**: Sign in with Apple & Google via Supabase Auth
+- **Audio File Upload & Transcription**: Upload audio files and get automated transcriptions
+- **Limitless.ai Integration**: Sync lifelogs from your Limitless Pendant with cursor-based pagination
+- **Real-time Updates**: WebSocket support for live progress tracking
+- **Multi-Source Transcripts**: Unified view of uploaded files and Limitless recordings
+- **Secure Authentication**: OAuth integration with Apple and Google via Supabase Auth
+- **MCP Support**: Model Context Protocol server integration
 - **Offline-First**: WatermelonDB for local data persistence
-- **File Upload**: React Native file picker with Supabase Storage
-- **Real-Time Updates**: WebSocket connection for live transcript processing
-- **MCP Integration**: Install and manage MCP servers via MCPM
 
-## Quick Start
+## 📋 Table of Contents
 
-### Prerequisites
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Database Setup](#database-setup)
+- [API Documentation](#api-documentation)
+- [Development](#development)
+- [Deployment](#deployment)
+- [Troubleshooting](#troubleshooting)
 
-- Node.js 18+
+## 🏗️ Architecture
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│                 │     │                 │     │                 │
+│  Frontend       │────▶│  Backend API    │────▶│  Supabase       │
+│  (Expo/React)   │     │  (FastAPI)      │     │  (PostgreSQL)   │
+│                 │     │                 │     │                 │
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+         │                      │                          │
+         │                      ▼                          ▼
+         │              ┌─────────────────┐      ┌─────────────────┐
+         │              │                 │      │                 │
+         │              │  Limitless API  │      │  Storage        │
+         │              │                 │      │  (Audio Files)  │
+         │              │                 │      │                 │
+         │              └─────────────────┘      └─────────────────┘
+         │                      │
+         ▼                      ▼
+    WebSocket              MCP Servers
+    Connection             via MCPM
+```
+
+## 📦 Prerequisites
+
+- Node.js 18+ and npm
 - Python 3.11+
-- Expo CLI (`npm install -g @expo/cli`)
+- Expo CLI (`npm install -g expo-cli`)
+- Supabase CLI (`npm install -g supabase`)
+- MCPM (`npm install -g @modelcontextprotocol/cli`)
 - Supabase account
-- MCPM installed (`npm install -g @modelcontextprotocol/cli`)
+- Limitless.ai account with API access (and Pendant)
 
-### One-Command Setup
+## 🛠️ Installation
+
+### Quick Start
 
 ```bash
 # Clone and setup everything
-git clone <your-repo>
-cd audio-transcript-mcp
+git clone https://github.com/yourusername/cco-pinai.git
+cd cco-pinai
 chmod +x scripts/*.sh
-./scripts/setup.sh
+./scripts/setup_all.sh
 ```
 
 ### Manual Setup
 
-#### Frontend Setup
+#### 1. Clone the repository
 
-1. Install dependencies:
 ```bash
-cd frontend && npm install
+git clone https://github.com/yourusername/cco-pinai.git
+cd cco-pinai
 ```
 
-2. Configure environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your Supabase credentials
-```
+#### 2. Backend Setup
 
-#### Backend Setup
-
-1. Set up Python environment:
 ```bash
-cd backend && python setup.py
-```
-
-2. Configure environment variables:
-```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
 cp .env.example .env
 # Edit .env with your configuration
 ```
 
-### Development
+#### 3. Frontend Setup
 
-Start both servers with one command:
 ```bash
-npm run dev
+cd frontend
+npm install
+cp .env.example .env
+# Edit .env with your configuration
 ```
 
-Or start them individually:
-```bash
-# Frontend only
-npm run frontend
+#### 4. Supabase Setup
 
-# Backend only  
-npm run backend
+```bash
+# Initialize Supabase
+supabase init
+supabase link --project-ref YOUR_PROJECT_REF
+
+# Apply database migrations
+cd backend
+export PGPASSWORD="YOUR_DATABASE_PASSWORD"
+supabase db push -p YOUR_DATABASE_PASSWORD
 ```
 
-## Supabase Configuration
+## ⚙️ Configuration
 
-### Required Tables
+### Environment Variables
 
-Create these tables in your Supabase database:
+**backend/.env**
+```env
+# Supabase Configuration
+SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+SUPABASE_KEY=YOUR_ANON_KEY
+SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+PGPASSWORD=YOUR_DATABASE_PASSWORD
 
-```sql
--- Audio files storage bucket
-CREATE TABLE IF NOT EXISTS storage.buckets (
-  id text PRIMARY KEY,
-  name text NOT NULL,
-  public boolean DEFAULT false
-);
+# Limitless AI Configuration
+LIMITLESS_API_KEY=YOUR_LIMITLESS_API_KEY
 
-INSERT INTO storage.buckets (id, name, public) VALUES ('audio-files', 'audio-files', true);
+# Server Configuration
+MCP_SERVER_URL=localhost:8000
 
--- Transcripts table
-CREATE TABLE transcripts (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  title text NOT NULL,
-  audio_url text NOT NULL,
-  transcript_text text,
-  status text NOT NULL DEFAULT 'pending',
-  user_id uuid REFERENCES auth.users(id),
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
+# OAuth Configuration (Optional)
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET=YOUR_GOOGLE_CLIENT_SECRET
+```
 
--- MCP servers table
-CREATE TABLE mcp_servers (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,
-  url text NOT NULL,
-  status text NOT NULL DEFAULT 'available',
-  description text,
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now()
-);
+**frontend/.env**
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=YOUR_ANON_KEY
+EXPO_PUBLIC_API_URL=http://localhost:8000
+
+# OAuth Configuration
+GOOGLE_CLIENT_ID=YOUR_GOOGLE_CLIENT_ID
 ```
 
 ### OAuth Configuration
 
-Configure OAuth providers in your Supabase project:
-
-1. Go to Authentication → Settings → Auth Providers
+1. Go to Supabase Dashboard → Authentication → Providers
 2. Enable Apple and Google providers
-3. Add your app's redirect URLs:
-   - `audio-transcript-mcp://auth` (for mobile)
-   - `http://localhost:3000/auth` (for web development)
+3. Add redirect URLs:
+   - `audio-transcript-mcp://auth` (mobile)
+   - `http://localhost:8081/auth` (web development)
 
-## Environment Variables
+## 🗄️ Database Setup
 
-### Frontend (.env)
-```
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-EXPO_PUBLIC_API_URL=http://localhost:8000
-```
+### Automatic Setup (Recommended)
 
-### Backend (.env)
-```
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_anon_key
-MCP_SERVER_URL=localhost:8000
+```bash
+cd scripts
+./setup_supabase.sh
 ```
 
-## Usage
+### Manual Migration
 
-1. **Sign In**: Use Apple or Google OAuth to authenticate
-2. **Upload Audio**: Tap "Upload Audio File" to select and upload audio files
-3. **Process Transcripts**: Files are automatically processed via MCP servers
-4. **View Results**: Real-time updates show transcript processing status
-5. **Manage MCPs**: Install new MCP servers from the available list
+1. Get your database password from Supabase Dashboard → Settings → Database
+2. Run migrations:
+   ```bash
+   cd /path/to/project
+   export PGPASSWORD="YOUR_DATABASE_PASSWORD"
+   supabase db push -p YOUR_DATABASE_PASSWORD
+   ```
 
-## API Endpoints
+### Migration Files
 
-### FastAPI Backend
+- `20240101000000_initial_schema.sql` - Base tables (transcripts, mcp_servers)
+- `20240101000001_storage_setup.sql` - Storage bucket for audio files
+- `20250706000001_add_limitless_integration.sql` - Limitless.ai support
+- `20250706000002_fix_nullable_fields.sql` - Schema adjustments
 
-- `GET /` - Health check
-- `GET /health` - Service health status
+## 📚 API Documentation
+
+See [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md) for detailed endpoint documentation.
+
+### Key Endpoints
+
+#### Limitless Integration
+- `POST /limitless/sync/range` - Sync lifelogs for a date range
+- `POST /limitless/sync/incremental` - Incremental sync from last checkpoint
+- `GET /limitless/lifelogs/{id}` - Get specific lifelog
+- `GET /limitless/lifelogs/recent` - Get recent lifelogs
+
+#### Transcript Management
+- `GET /transcripts/{user_id}` - Get user's transcripts
+- `POST /transcript/process` - Process uploaded audio
+- `GET /transcripts/{user_id}/stats` - Get transcript statistics
+
+#### MCP Integration
 - `GET /mcp/list` - List available MCP servers
 - `POST /mcp/install` - Install MCP server
-- `POST /transcript/process` - Process audio transcript
+
+#### Real-time
 - `WebSocket /ws` - Real-time updates
 
-## Development
+## 💻 Development
+
+### Running the Services
+
+```bash
+# Start both frontend and backend
+npm run dev
+
+# Or run separately:
+
+# Backend only
+cd backend
+python main.py
+
+# Frontend only
+cd frontend
+npm start
+```
 
 ### Running Tests
 
 ```bash
-# Frontend
-npm test
+# Test Limitless integration
+cd backend
+python test_with_real_user.py
 
-# Backend
-cd backend && python -m pytest
+# Test database sync
+python test_database_sync.py
+
+# Demo complete integration
+python demo_complete_integration.py
 ```
 
-### Building for Production
+### Development Workflow
 
-```bash
-# Frontend
-npm run build
+1. **Backend Development**
+   - API runs on `http://localhost:8000`
+   - FastAPI automatic reload enabled
+   - Swagger docs at `/docs`
 
-# Backend
-cd backend && python -m pip install --upgrade pip
-pip install -r requirements.txt
+2. **Frontend Development**
+   - Expo DevTools in browser
+   - Hot reload enabled
+   - Shake device for dev menu
+
+## 🚀 Deployment
+
+See [DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed deployment instructions.
+
+### Quick Deploy
+
+1. **Backend (Render/Railway)**
+   ```bash
+   cd backend
+   # Follow platform-specific deployment
+   ```
+
+2. **Frontend (Expo EAS)**
+   ```bash
+   cd frontend
+   eas build --platform all
+   eas submit
+   ```
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **Database Migration Errors**
+   ```bash
+   # Reset and reapply migrations
+   supabase db reset
+   supabase db push -p YOUR_PASSWORD
+   ```
+
+2. **Limitless API Connection**
+   - Verify API key is valid
+   - Ensure Pendant is paired
+   - Check rate limits
+
+3. **Authentication Issues**
+   - Verify OAuth redirect URLs
+   - Check Supabase auth settings
+   - Ensure environment variables are set
+
+4. **WebSocket Connection**
+   - Check CORS settings
+   - Verify backend is running
+   - Check firewall/proxy settings
+
+### Debug Mode
+
+```python
+# Backend debug logging
+logging.basicConfig(level=logging.DEBUG)
 ```
 
-## License
+```javascript
+// Frontend debug
+if (__DEV__) {
+  console.log('Debug info:', data);
+}
+```
 
-MIT License - see LICENSE file for details
+## 📂 Project Structure
+
+```
+cco-pinai/
+├── frontend/               # Expo React Native app
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   ├── services/      # API and storage services
+│   │   ├── config/        # Configuration files
+│   │   └── types/         # TypeScript definitions
+│   └── App.tsx            # Main app component
+├── backend/               # FastAPI backend
+│   ├── src/
+│   │   └── services/      # Business logic
+│   │       ├── limitless.py    # Limitless API client
+│   │       ├── sync.py         # Sync orchestration
+│   │       └── database.py     # Supabase integration
+│   └── main.py            # FastAPI app
+├── supabase/              # Database files
+│   └── migrations/        # SQL migration files
+├── scripts/               # Setup and utility scripts
+└── docs/                  # Documentation
+```
+
+## 📄 License
+
+MIT License - see [LICENSE](./LICENSE) for details
+
+## 🤝 Contributing
+
+See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for contribution guidelines.
+
+## 📞 Support
+
+- Issues: [GitHub Issues](https://github.com/yourusername/cco-pinai/issues)
+- Discussions: [GitHub Discussions](https://github.com/yourusername/cco-pinai/discussions)
+- Documentation: [/docs](./docs)

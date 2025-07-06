@@ -20,7 +20,9 @@
       "Bash(grep:*)",
       "Bash(pip install:*)",
       "Bash(say:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(export PGPASSWORD=\"ILoveBacon2Much\")"
     ],
     "deny": []
   }
