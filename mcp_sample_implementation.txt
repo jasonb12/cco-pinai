@@ -1,0 +1,227 @@
+# Enhanced MCP Orchestrator with CCOPINAI Architecture + Limitless Ingestion + Persistence + Cron
+
+# project structure
+# - app/
+#     - tools/
+#         - __init__.py
+#         - summarize_text.py
+#         - extract_names.py
+#     - flows/
+#         - __init__.py
+#         - main_dag.py
+#     - events/
+#         - drive_watcher.py
+#         - limitless_ingest.py
+#     - schemas.py
+#     - registry.py
+#     - utils.py
+#     - server.py
+# - requirements.txt
+
+# ==== app/schemas.py ====
+from pydantic import BaseModel
+from typing import List, Optional
+
+class TextInput(BaseModel):
+    text: str
+
+class NamesOutput(BaseModel):
+    names: List[str]
+
+class SummaryOutput(BaseModel):
+    summary: str
+
+class LifelogEntry(BaseModel):
+    id: str
+    title: str
+    markdown: str
+    startTime: str
+    endTime: str
+    isStarred: Optional[bool]
+    updatedAt: str
+
+class LimitlessLifelogsResponse(BaseModel):
+    lifelogs: List[LifelogEntry]
+
+
+# ==== app/registry.py ====
+from dataclasses import dataclass, field
+from typing import Callable, Type
+from inspect import signature
+from app.schemas import BaseModel
+
+@dataclass
+class ToolMeta:
+    name: str
+    version: str
+    function: Callable
+    input_schema: Type[BaseModel]
+    output_schema: Type[BaseModel]
+    default_params: dict = field(default_factory=dict)
+
+registry: dict[str, ToolMeta] = {}
+
+def tool(name: str, version: str = "0.1", **default_params):
+    def decorator(func):
+        sig = signature(func)
+        inp, out = list(sig.parameters.values())[0].annotation, sig.return_annotation
+        registry[name] = ToolMeta(name, version, func, inp, out, default_params)
+        return func
+    return decorator
+
+
+# ==== app/tools/summarize_text.py ====
+from app.schemas import TextInput, SummaryOutput
+from langchain.chat_models import ChatOpenAI
+from langchain.prompts import PromptTemplate
+from app.registry import tool
+
+@tool(name="summarize_text", version="1.0")
+def summarize_text(input: TextInput) -> SummaryOutput:
+    llm = ChatOpenAI(model="gpt-4o", temperature=0.3)
+    prompt = PromptTemplate.from_template("Summarize the following:\n\n{text}")
+    result = llm.invoke(prompt.format(text=input.text))
+    return SummaryOutput(summary=result)
+
+
+# ==== app/tools/extract_names.py ====
+from app.schemas import TextInput, NamesOutput
+from app.registry import tool
+import re
+
+@tool(name="extract_names", version="1.0")
+def extract_names(input: TextInput) -> NamesOutput:
+    names = re.findall(r"[A-Z][a-z]+ [A-Z][a-z]+", input.text)
+    return NamesOutput(names=names)
+
+
+# ==== app/flows/main_dag.py ====
+from app.tools.summarize_text import summarize_text
+from app.tools.extract_names import extract_names
+from app.schemas import TextInput
+from app.utils import log_stage, persist_result
+
+def run_pipeline(job_id: str, text: str):
+    text_input = TextInput(text=text)
+
+    try:
+        log_stage(job_id, "summarize_text", "started")
+        summary = summarize_text(text_input)
+        log_stage(job_id, "summarize_text", "succeeded", summary.dict())
+
+        log_stage(job_id, "extract_names", "started")
+        names = extract_names(text_input)
+        log_stage(job_id, "extract_names", "succeeded", names.dict())
+
+        result = {"summary": summary.summary, "names": names.names}
+        persist_result(job_id, result)
+        return result
+    except Exception as e:
+        log_stage(job_id, "pipeline", "failed", {"error": str(e)})
+        raise
+
+
+# ==== app/events/limitless_ingest.py ====
+import os
+import requests
+from uuid import uuid4
+from datetime import datetime, timedelta
+from app.schemas import LimitlessLifelogsResponse
+from app.flows.main_dag import run_pipeline
+from app.utils import log_stage
+
+LIMITLESS_API_KEY = os.getenv("LIMITLESS_API_KEY")
+LIMITLESS_API_URL = "https://api.limitless.ai/v1/lifelogs"
+
+def fetch_limitless_lifelogs(date: str, timezone: str = "UTC", limit: int = 3):
+    headers = {"X-API-Key": LIMITLESS_API_KEY}
+    params = {
+        "date": date,
+        "timezone": timezone,
+        "limit": limit,
+        "includeMarkdown": True,
+        "includeHeadings": True
+    }
+    res = requests.get(LIMITLESS_API_URL, params=params, headers=headers)
+    res.raise_for_status()
+    return LimitlessLifelogsResponse(lifelogs=res.json()["data"]["lifelogs"])
+
+def ingest_and_process_lifelogs(date: str, timezone: str = "UTC", limit: int = 3):
+    lifelogs = fetch_limitless_lifelogs(date, timezone, limit).lifelogs
+    results = []
+    for entry in lifelogs:
+        job_id = str(uuid4())
+        try:
+            log_stage(job_id, "ingest", "started", {"lifelog_id": entry.id})
+            result = run_pipeline(job_id, entry.markdown)
+            results.append({"job_id": job_id, "result": result})
+        except Exception as e:
+            log_stage(job_id, "ingest", "failed", {"lifelog_id": entry.id, "error": str(e)})
+    return results
+
+def cron_daily_ingest():
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    ingest_and_process_lifelogs(today, timezone="UTC", limit=10)
+
+
+# ==== app/utils.py ====
+from supabase import create_client
+import os
+
+url = os.getenv("SUPABASE_URL")
+key = os.getenv("SUPABASE_KEY")
+supabase = create_client(url, key)
+
+def log_stage(job_id: str, stage: str, status: str, payload: dict | None = None):
+    supabase.table("processing_logs").insert({
+        "job_id": job_id,
+        "stage": stage,
+        "status": status,
+        "payload": payload or {}
+    }).execute()
+
+def persist_result(job_id: str, result: dict):
+    supabase.table("mcp_job_results").insert({
+        "job_id": job_id,
+        "result": result
+    }).execute()
+
+
+# ==== app/server.py ====
+from fastapi import FastAPI
+from pydantic import BaseModel
+from uuid import uuid4
+from app.flows.main_dag import run_pipeline
+from app.events.limitless_ingest import ingest_and_process_lifelogs
+
+app = FastAPI()
+
+class InputPayload(BaseModel):
+    text: str
+
+class LifelogRequest(BaseModel):
+    date: str
+    timezone: str = "UTC"
+    limit: int = 3
+
+@app.post("/run")
+async def run(payload: InputPayload):
+    job_id = str(uuid4())
+    result = run_pipeline(job_id, payload.text)
+    return {"job_id": job_id, "result": result}
+
+@app.post("/ingest/limitless")
+async def ingest_lifelogs(request: LifelogRequest):
+    return ingest_and_process_lifelogs(request.date, request.timezone, request.limit)
+
+
+# ==== requirements.txt ====
+fastapi
+uvicorn
+pydantic
+langchain
+openai
+supabase
+python-dotenv
+requests
+

@@ -45,39 +45,39 @@ Targets: Sync P95 ≤ 5 min • AI proc P95 ≤ 30 s • Query P99 ≤ 2 s.
 
 | Service | Function |
 |---------|----------|
-| **Auth-svc** | User auth & JWT via Supabase Auth |
-| **Ingestor-svc** | Pull `/v1/transcripts`; raw ➜ S3; emit `new_doc` on **Supabase Realtime** |
-| **Vectorizer-λ** | Listen `new_doc`; 1536-d embed; UPSERT → `supabase_vectors` |
+| **Auth‑svc** | User auth & JWT via Supabase Auth |
+| **Ingestor‑svc** | Pull `/v1/transcripts`; raw ➜ S3; emit `new_doc` on **Supabase Realtime** |
+| **Vectorizer‑λ** | Listen `new_doc`; 1536‑d embed; UPSERT → `supabase_vectors` |
 | **ActionGraph** | Stateless **LangGraph**; gRPC; writes `proposed_actions` |
-| **Gatekeeper** | RLS-safe approval queue (`status=pending`) |
+| **Gatekeeper** | RLS‑safe approval queue (`status=pending`) |
 | **Executor** | Worker (`pg_cron`) pops approved; fires MCP adapters (GCal, Gmail, Slack…) |
-| **Notification-svc** | Supabase Realtime ➜ Expo push + in-app |
-| **Storage-svc** | Supabase Storage buckets (audio, images, cards, docs) |
+| **Notification‑svc** | Supabase Realtime ➜ Expo push + in‑app |
+| **Storage‑svc** | Supabase Storage buckets (audio, images, cards, docs) |
 | **Scheduler (APScheduler)** | Persists cron specs in `schedules` |
 
 ### 4.2 Frontend Experience  
 
 *React Native + Expo SDK ≥ 50*  
 
-- Real-time Chat with streaming AI.  
+- Real‑time Chat with streaming AI.  
 - Notification Tray (approvals & alerts).  
 - Dashboard (metrics & next actions).  
 - Calendar view (scheduled prompts).  
 - Geofence awareness ("what happened last time here").  
-- Offline-first via `react-query + MMKV`.
+- Offline‑first via `react‑query + MMKV`.
 
 ### 4.3 Theming & Dev Toolchain  
 
 | Layer | Tool | Notes |
 |-------|------|-------|
-| Component lib | **Tamagui** or **React-Native Paper** |
+| Component lib | **Tamagui** or **React‑Native Paper** |
 | Utility CSS | **Nativewind** (Tailwind RN tokens) |
 | Theme engine | Tailwind tokens ➜ `ThemeProvider` (dark / light / brand) |
 | Global State | **Zustand** |
-| Navigation | **react-navigation v7** |
-| Animation | **react-native-reanimated v3** |
-| Forms | **react-hook-form** |
-| Testing | **Playwright + Jest + Testing-Library** |
+| Navigation | **react‑navigation v7** |
+| Animation | **react‑native‑reanimated v3** |
+| Forms | **react‑hook‑form** |
+| Testing | **Playwright + Jest + Testing‑Library** |
 | OTA | **EAS Update** |
 | CI/CD | **GitHub Actions** |
 
@@ -187,7 +187,7 @@ graph TD
 
 - **Playwright Vision** – GUI smoke every PR.  
 - **Playwright Regression** – MCP tool flows.  
-- **Vitest + Edge-func smoke** – CI fixtures.  
+- **Vitest + Edge‑func smoke** – CI fixtures.  
 
 ---
 
@@ -206,88 +206,39 @@ Teams drown in spoken knowledge but lose action items. CCOPINAI listens, extract
 
 ---
 
-## Addendum – MCP Configuration & Processing Monitor
+## 11 Users & Stories  
 
-### 🔧 MCP Configuration
-
-**Goal:** let power users graphically enable/disable tools, set defaults (e.g., "work" vs "personal" calendars), map trigger phrases, and run dry‑runs.
-
-**Requirements**
-
-| ID | Requirement |
-|----|-------------|
-| MCP‑1 | GUI lists all installed MCP tools with status (enabled/disabled, OAuth bound) |
-| MCP‑2 | "Add Integration" wizard: choose provider ➜ OAuth ➜ scope selection |
-| MCP‑3 | Per‑tool default parameters (e.g., default calendar ID, email signature) |
-| MCP‑4 | Trigger rules table: regex / embedding similarity, geo‑fence, schedule |
-| MCP‑5 | Test‑run button executes tool in sandbox, returns result payload |
-| MCP‑6 | Versioning: track tool version & last successful exec |
-
-### 📈 Processing Monitor
-
-**Goal:** give visibility into each transcript's life‑cycle from ingestion to executed action.
-
-Pipeline stages:
-
-1. **Ingested** – raw asset stored  
-2. **Vectorized** – embeddings done  
-3. **Parsed** – tasks & entities extracted  
-4. **Proposed** – actions queued (pending)  
-5. **Approved** – user approved  
-6. **Executed** – MCP call succeeded / failed  
-7. **Indexed** – final RAG record live
-
-**Requirements**
-
-| ID | Requirement |
-|----|-------------|
-| MON‑1 | Real‑time table of items with stage badges & timestamps |
-| MON‑2 | Filter by status, meeting ID, user, tool |
-| MON‑3 | Retry / Force‑execute buttons (RLS‑guarded) |
-| MON‑4 | Error detail modal: stacktrace, payload preview |
-| MON‑5 | Websocket diff view auto‑refresh (<1 s push) |
-| MON‑6 | Export CSV / JSON for audit |
-
-### Backend Additions
-
-| Service | Function |
-|---------|----------|
-| **ToolRegistry‑svc** | CRUD for MCP metadata, OAuth tokens, default params |
-| **QueueMonitor‑svc** | Streams `actions` & `logs` tables via Supabase Realtime |
-| **Log‑collector** | Edge Function writes per‑stage events into `processing_logs` (jsonb) |
-
-### Database Extensions
-
-```sql
-create table mcp_tools (
-  id uuid primary key,
-  name text,
-  version text,
-  enabled boolean,
-  oauth_provider text,
-  default_params jsonb,
-  updated_at timestamptz default now()
-);
-
-create table processing_logs (
-  id bigint generated always as identity,
-  transcript_id uuid,
-  stage text,
-  status text,
-  payload jsonb,
-  ts timestamptz default now(),
-  primary key(id)
-);
-```
-
-### UX KPIs (extended)
-
-| Metric | Target |
-|--------|--------|
-| MCP config completion time | < 3 min |
-| Monitor latency (event ➜ UI) | < 1 s |
-| Action failure rate | < 0.5 % |
+| Priority | Story |
+|----------|-------|
+| P0 | View & query all transcripts |
+| P0 | Approve / Deny `schedule_prompt` |
+| P0 | See approved prompts on Calendar; pause/resume/cancel |
+| P1 | Location trigger reminder |
+| P1 | Expo push & in‑app toast |
 
 ---
 
-**End of Document**
+## 12 Functional Spec  
+
+* **Ingestion Daemon** – `/v1/transcripts?cursor=…`  
+* **LangGraph** – `HumanApproval` node; tools: `schedule_prompt`, `send_email`, `create_ticket`.  
+* **Scheduler** – APS job on approval; status tracked.  
+* **Location Service** – Expo foreground → Supabase RPC.  
+* **Notifications** – Supabase Realtime → Expo push via `expo‑server‑sdk‑python`.
+
+---
+
+## 13 Enhanced Features (Phase 2+)  
+
+### Advanced Search & Filtering  
+Participants • sentiment • duration • date • AI semantic queries.
+
+### Full Workflow Engine  
+Calendar creation • email drafting • document creation via MCP tools.
+
+### Processing Architecture  
+Immediate processing for simple actions • background batch for complex workflows.
+
+---
+
+**End of Document** 

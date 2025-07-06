@@ -43,8 +43,8 @@ A full-stack application that combines audio file transcription with Limitless.a
          │              └─────────────────┘      └─────────────────┘
          │                      │
          ▼                      ▼
-    WebSocket              MCP Servers
-    Connection             via MCPM
+    Supabase Realtime      MCP Servers
+    (Queue & Updates)      via MCPM
 ```
 
 ## 📦 Prerequisites
