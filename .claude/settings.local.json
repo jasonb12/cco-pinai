@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(npm install:*)",
+      "Bash(python:*)",
+      "Bash(chmod:*)",
+      "Bash(./scripts/setup.sh:*)",
+      "Bash(brew install:*)",
+      "Bash(./scripts/setup_supabase_simple.sh:*)",
+      "Bash(source:*)",
+      "Bash(mcpm:*)",
+      "Bash(curl:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(npm run frontend:*)",
+      "Bash(npm start)",
+      "Bash(npx expo install:*)",
+      "Bash(supabase db push:*)",
+      "Bash(grep:*)",
+      "Bash(pip install:*)"
+    ],
+    "deny": []
+  }
+}
