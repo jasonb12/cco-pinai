@@ -18,7 +18,9 @@
       "Bash(npx expo install:*)",
       "Bash(supabase db push:*)",
       "Bash(grep:*)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(say:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

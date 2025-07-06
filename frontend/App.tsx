@@ -154,7 +154,7 @@ export default function App() {
           return;
         }
 
-        const { url } = await uploadAudioFile(file.uri, file.name);
+        const { url } = await uploadAudioFile(file.uri, file.name, file.file);
         
         const newTranscript: Transcript = {
           id: Date.now().toString(),

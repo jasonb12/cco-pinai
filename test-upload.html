@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supabase Storage Upload</title>
+</head>
+<body>
+    <h1>Test Audio Upload to Supabase</h1>
+    <input type="file" id="audioFile" accept="audio/*">
+    <button onclick="uploadFile()">Upload</button>
+    <div id="result"></div>
+
+    <script>
+        // Replace with your actual Supabase credentials from backend/.env
+        const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+        const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+        async function uploadFile() {
+            const file = document.getElementById('audioFile').files[0];
+            if (!file) {
+                alert('Please select a file');
+                return;
+            }
+
+            // You need to be authenticated first
+            // For testing, you can use a test user or your existing auth
+            const userId = 'test-user-id'; // Replace with actual user ID
+            
+            const filePath = `${userId}/${Date.now()}-${file.name}`;
+            
+            try {
+                const response = await fetch(`${SUPABASE_URL}/storage/v1/object/audio-files/${filePath}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'Content-Type': file.type
+                    },
+                    body: file
+                });
+
+                const result = await response.text();
+                document.getElementById('result').innerHTML = `
+                    <p>Status: ${response.status}</p>
+                    <p>Response: ${result}</p>
+                    <p>File path: ${filePath}</p>
+                `;
+            } catch (error) {
+                document.getElementById('result').innerHTML = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

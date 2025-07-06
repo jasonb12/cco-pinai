@@ -39,6 +39,7 @@ export interface AudioFile {
   name: string;
   size: number;
   type: string;
+  file?: File; // For web platform
 }
 
 export interface UploadResult {
