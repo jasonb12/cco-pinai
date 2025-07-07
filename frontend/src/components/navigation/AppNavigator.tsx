@@ -5,21 +5,26 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
+import { View, Text, StyleSheet } from 'react-native';
 
 // Import navigation stacks
 import AuthStack from './AuthStack';
 import MainTabs from './MainTabs';
 
-// Import theme and auth
-import { AppThemeProvider } from '../ThemeProvider';
-import { useThemeStore } from '../../stores/themeStore';
+// Import auth (remove theme temporarily)
 import { supabase } from '../../config/supabase';
 import { User } from '@supabase/auth-js';
+
+// Simple loading component
+const LoadingScreen = () => (
+  <View style={styles.loadingContainer}>
+    <Text style={styles.loadingText}>Loading CCOPINAI...</Text>
+  </View>
+);
 
 export default function AppNavigator() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { activeTheme } = useThemeStore();
 
   useEffect(() => {
     // Check initial session
@@ -44,16 +49,27 @@ export default function AppNavigator() {
   }, []);
 
   if (isLoading) {
-    // You can add a loading screen here
-    return null;
+    return <LoadingScreen />;
   }
 
   return (
-    <AppThemeProvider>
-      <NavigationContainer>
-        {user ? <MainTabs /> : <AuthStack />}
-        <StatusBar style={activeTheme === 'dark' ? 'light' : 'dark'} />
-      </NavigationContainer>
-    </AppThemeProvider>
+    <NavigationContainer>
+      {user ? <MainTabs /> : <AuthStack />}
+      <StatusBar style="auto" />
+    </NavigationContainer>
   );
-} 
+}
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+}); 

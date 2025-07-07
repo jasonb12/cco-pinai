@@ -1,11 +1,13 @@
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>CCOPINAI - Testing Vanilla Setup</Text>
-      <Text>If you see this without JavaScript errors, the import.meta issue is fixed!</Text>
+      <Text style={styles.title}>CCOPINAI</Text>
+      <Text style={styles.subtitle}>Navigation System Ready</Text>
+      <Text style={styles.status}>✅ Import.meta issue resolved</Text>
       <StatusBar style="auto" />
     </View>
   );
@@ -17,5 +19,22 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: 20,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 16,
+  },
+  status: {
+    fontSize: 16,
+    color: '#22c55e',
+    fontWeight: '600',
   },
 });

@@ -12,9 +12,6 @@ import SignUpScreen from '../auth/SignUpScreen';
 import VerifyEmailScreen from '../auth/VerifyEmailScreen';
 import ForgotPasswordScreen from '../auth/ForgotPasswordScreen';
 
-// Import theme store
-import { useThemeStore } from '../../stores/themeStore';
-
 const Stack = createNativeStackNavigator();
 
 export type AuthStackParamList = {
@@ -26,12 +23,10 @@ export type AuthStackParamList = {
 };
 
 export default function AuthStack() {
-  const { activeTheme } = useThemeStore();
-  
   const screenOptions = {
     headerShown: false,
     contentStyle: {
-      backgroundColor: activeTheme === 'dark' ? '#000000' : '#ffffff',
+      backgroundColor: '#ffffff',
     },
   };
 
