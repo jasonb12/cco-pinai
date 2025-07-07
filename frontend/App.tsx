@@ -1,14 +1,21 @@
-import React from 'react';
 import { StatusBar } from 'expo-status-bar';
-import AppNavigator from './src/components/navigation/AppNavigator';
-import { TamaguiProvider } from '@tamagui/core';
-import config from './tamagui.config';
+import { StyleSheet, Text, View } from 'react-native';
 
 export default function App() {
   return (
-    <TamaguiProvider config={config}>
-      <AppNavigator />
+    <View style={styles.container}>
+      <Text>CCOPINAI - Testing Vanilla Setup</Text>
+      <Text>If you see this without JavaScript errors, the import.meta issue is fixed!</Text>
       <StatusBar style="auto" />
-    </TamaguiProvider>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

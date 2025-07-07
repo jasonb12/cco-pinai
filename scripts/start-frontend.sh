@@ -71,7 +71,7 @@ if lsof -i :$PORT > /dev/null 2>&1; then
     echo "🔍 Port $PORT is already in use by PID: $EXISTING_PID"
     
     # Check if it's an Expo process
-    if ps -p $EXISTING_PID -o comm= | grep -q "node\|expo" 2>/dev/null; then
+    if ps -p $EXISTING_PID | grep -q "node\|expo" 2>/dev/null; then
         echo "📱 Detected existing Expo server on port $PORT"
         
         if [[ "$KILL_EXISTING" == "true" ]] || [[ "$CLEAR_CACHE" == "true" ]]; then
@@ -120,7 +120,25 @@ fi
 # Clear cache if requested
 if [[ "$CLEAR_CACHE" == "true" ]]; then
     echo "🧹 Clearing Metro bundler cache..."
-    npx expo start --clear
+    echo "   Step 1: Starting cache clear process..."
+    
+    # Start expo with clear flag in background
+    CI=1 npx expo start --clear --port $PORT > cache_clear.log 2>&1 &
+    CLEAR_PID=$!
+    
+    echo "   Step 2: Waiting 10 seconds for cache to clear..."
+    sleep 10
+    
+    echo "   Step 3: Stopping cache clear process..."
+    kill -9 $CLEAR_PID 2>/dev/null || true
+    
+    # Wait a moment for process to fully stop
+    sleep 2
+    
+    echo "   ✅ Cache cleared successfully"
+    
+    # Clean up log file
+    rm -f cache_clear.log 2>/dev/null || true
 fi
 
 echo "🚀 Starting NEW Expo development server on port $PORT..."
@@ -135,12 +153,8 @@ if [[ -f ".env" ]]; then
     echo "env: export EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_API_URL GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_PROJECT_ID"
 fi
 
-# Start frontend in background
-if [[ "$CLEAR_CACHE" == "true" ]]; then
-    npx expo start --web --port $PORT --clear --non-interactive >> expo.log 2>&1 &
-else
-    npx expo start --web --port $PORT --non-interactive >> expo.log 2>&1 &
-fi
+# Start frontend in background (always use normal start after cache clear)
+npx expo start --web --port $PORT --non-interactive >> expo.log 2>&1 &
 
 PID=$!
 echo "🚀 NEW Expo development server started with PID: $PID"
