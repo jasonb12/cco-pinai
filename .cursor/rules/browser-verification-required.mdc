@@ -1,0 +1,66 @@
+---
+alwaysApply: true
+description: Browser automation verification requirement for web development progress claims
+---
+
+# Browser Automation Verification Required
+
+## Mandatory Verification Before Progress Claims
+
+Before claiming that any web application feature is "working", "rendering", or "functional", you MUST:
+
+### 1. Use Browser Automation Tools
+- Use Playwright, Puppeteer, or similar browser automation
+- Actually load the page in a real browser environment
+- Verify expected elements are present and interactive
+
+### 2. Verify Actual User Experience
+- Check that buttons are clickable
+- Confirm text content is displayed correctly
+- Validate navigation flows work end-to-end
+- Ensure forms submit properly
+- Test responsive design elements
+
+### 3. Document Verification Results
+- Show screenshots or automation logs as proof
+- Report specific elements found/not found
+- Include any console errors or warnings
+- Provide step-by-step verification results
+
+### 4. Never Claim Success Based On
+- ❌ HTTP 200 status codes alone
+- ❌ Partial test outputs
+- ❌ Server logs showing requests
+- ❌ Bundle compilation success
+- ❌ Assumptions about functionality
+
+### 5. Required Verification Pattern
+```
+1. Run browser automation test
+2. Capture actual results (screenshots/logs)
+3. Report findings honestly
+4. Only then make claims about functionality
+```
+
+## Examples of Required Verification
+
+### ✅ Correct Approach
+"I ran Playwright automation and confirmed:
+- Homepage loads with CCOPINAI title visible
+- Get Started button is present and clickable
+- Navigation to sign-in page works
+- No JavaScript errors in console"
+
+### ❌ Incorrect Approach
+"The server is returning 200 OK so the homepage is working perfectly!"
+
+## Enforcement
+This rule applies to ALL web development work, especially:
+- Frontend applications
+- User interface claims
+- Navigation functionality
+- Form submissions
+- Authentication flows
+- API integration testing
+
+**Remember: Real browser verification is the only acceptable proof of web application functionality.**

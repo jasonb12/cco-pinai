@@ -1,0 +1,67 @@
+---
+alwaysApply: true
+---
+
+# Chrome Debug Protocol Access Requirements
+
+## CRITICAL: Never Launch Chrome Manually
+
+**NEVER** launch Chrome manually with debug parameters. This is **STRICTLY PROHIBITED** and will cause inconsistent CDP (Chrome Debug Protocol) access and break browser automation.
+
+## Required Chrome Startup Script
+
+### For Browser Automation & Testing
+**ALWAYS** use the proper Chrome startup script:
+```bash
+./scripts/start-chrome-debug.sh
+```
+
+## Why This Matters
+
+1. **CDP Port Management**: Script ensures proper Chrome Debug Protocol port (9222) configuration
+2. **Session Isolation**: Creates isolated test sessions with proper user data directories
+3. **CI/CD Optimization**: Uses flags optimized for automated testing and continuous integration
+4. **Process Management**: Handles Chrome process cleanup and PID tracking
+5. **Debugging Features**: Enables all necessary debugging and automation features
+6. **Port Conflict Resolution**: Automatically handles port conflicts and cleanup
+
+## Enforcement
+
+- ❌ **NEVER** run Chrome manually with `--remote-debugging-port`
+- ❌ **NEVER** use `/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome` directly
+- ❌ **NEVER** manually set `--user-data-dir` or other debug flags
+- ✅ **ALWAYS** use `./scripts/start-chrome-debug.sh`
+- ✅ **ALWAYS** wait for script confirmation before browser automation
+
+## Script Features
+
+The [scripts/start-chrome-debug.sh](mdc:scripts/start-chrome-debug.sh) script provides:
+
+- **Process Cleanup**: Kills existing Chrome processes safely
+- **Port Management**: Ensures port 9222 is available for CDP
+- **CI/CD Flags**: Optimized Chrome flags for automation:
+  - `--remote-debugging-port=9222` - Enables Playwright automation
+  - `--user-data-dir=/tmp/chrome_dev_session` - Isolated test session
+  - `--no-first-run` - Skip setup dialogs
+  - `--disable-background-timer-throttling` - Reliable timers for tests
+  - `--disable-ipc-flooding-protection` - Fast automation commands
+- **Verification**: Confirms CDP endpoint is accessible
+- **Logging**: Provides detailed startup logs and status
+
+## Browser Automation Workflow
+
+1. **Start Chrome**: `./scripts/start-chrome-debug.sh`
+2. **Wait for Ready**: Script confirms CDP accessibility
+3. **Use Automation**: Playwright/browser tools can connect to port 9222
+4. **Cleanup**: Script handles process management
+
+## Error Prevention
+
+Using the proper script prevents:
+- CDP connection failures
+- Port conflicts
+- Browser state inconsistencies
+- Manual flag configuration errors
+- Process cleanup issues
+
+**Remember**: Consistent Chrome startup procedures are essential for reliable browser automation and testing.

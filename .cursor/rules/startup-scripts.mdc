@@ -1,0 +1,50 @@
+---
+alwaysApply: true
+---
+
+# CCOPINAI Project Startup Requirements
+
+## CRITICAL: Never Use `npm start`
+
+**NEVER** use `npm start` directly for this project. This is **STRICTLY PROHIBITED** and will cause inconsistent behavior and break the application flow.
+
+## Required Startup Scripts
+
+### Frontend Development
+**ALWAYS** use the proper startup script:
+```bash
+./scripts/start_frontend.sh
+```
+
+### Full Application (Frontend + Backend)
+For running both frontend and backend together:
+```bash
+./scripts/start_all.sh
+```
+
+## Why This Matters
+
+1. **Environment Setup**: The startup scripts handle proper environment variable loading
+2. **Port Configuration**: Scripts ensure correct port assignments and conflict resolution
+3. **Dependency Management**: Scripts handle proper service startup order
+4. **Development Consistency**: Ensures all developers use the same startup process
+5. **Configuration Loading**: Scripts properly load `.env` files and export required variables
+
+## Enforcement
+
+- ❌ **NEVER** run `npm start` directly
+- ❌ **NEVER** run `expo start` directly  
+- ❌ **NEVER** run `cd frontend && npm start`
+- ✅ **ALWAYS** use `./scripts/start_frontend.sh`
+- ✅ **ALWAYS** use `./scripts/start_all.sh` for full stack
+
+## Script Locations
+
+- Frontend: [scripts/start_frontend.sh](mdc:scripts/start_frontend.sh)
+- Full Stack: [scripts/start_all.sh](mdc:scripts/start_all.sh)
+
+## Memory Reference
+
+This rule is backed by memory ID: 2505740 which states: "CRITICAL: Never use `npm start` for this project. Always use the proper start script located at `scripts/start_frontend.sh`. This is mandatory for consistent results and proper environment setup."
+
+**Remember**: Consistency in startup procedures is essential for reliable development and deployment.

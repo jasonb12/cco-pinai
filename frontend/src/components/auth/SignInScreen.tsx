@@ -99,10 +99,10 @@ export default function SignInScreen() {
         {/* Header */}
         <YStack alignItems="center" space="$2">
           <Text fontSize="$8" fontWeight="700" color="$color" textAlign="center">
-            Welcome Back
+            Sign In
           </Text>
           <Text fontSize="$4" color="$color11" textAlign="center">
-            Sign in to your account
+            Access your account
           </Text>
         </YStack>
 

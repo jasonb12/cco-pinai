@@ -21,6 +21,10 @@ export default function AuthPage() {
         
         if (error) {
           console.error('OAuth error:', error);
+          // Show error message and redirect back
+          setTimeout(() => {
+            window.location.href = '/';
+          }, 3000);
           return;
         }
         
@@ -36,12 +40,33 @@ export default function AuthPage() {
           if (!sessionError) {
             // Redirect back to main app
             window.location.href = '/';
+          } else {
+            console.error('Session error:', sessionError);
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 3000);
           }
         } else {
-          console.log('No auth tokens found in URL');
+          console.log('No auth tokens found in URL, checking URL hash...');
+          // Sometimes tokens are in the hash fragment after authentication
+          const hash = window.location.hash;
+          if (hash) {
+            // Let Supabase handle the session detection
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 1000);
+          } else {
+            console.log('No authentication data found');
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 3000);
+          }
         }
       } catch (err) {
         console.error('Auth callback error:', err);
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 3000);
       }
     };
 
@@ -52,8 +77,8 @@ export default function AuthPage() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>🔄 Processing Authentication...</Text>
-      <Text style={styles.subtitle}>Please wait while we complete your sign-in</Text>
+      <Text style={styles.title}>Completing Authentication...</Text>
+      <Text style={styles.subtitle}>Please wait while we sign you in</Text>
     </View>
   );
 }
@@ -63,17 +88,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    padding: 20,
+    backgroundColor: '#f5f5f5',
   },
   title: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
+    marginBottom: 16,
+    color: '#333',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#666',
     textAlign: 'center',
   },

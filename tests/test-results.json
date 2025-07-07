@@ -11,12 +11,12 @@
     "grepInvert": null,
     "maxFailures": 0,
     "metadata": {
-      "actualWorkers": 3
+      "actualWorkers": 5
     },
     "preserveOutput": "always",
     "reporter": [
       [
-        "html",
+        "list",
         null
       ],
       [
@@ -37,7 +37,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 5
         },
         "id": "chromium",
         "name": "chromium",
@@ -53,7 +53,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 5
         },
         "id": "firefox",
         "name": "firefox",
@@ -69,7 +69,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 5
         },
         "id": "webkit",
         "name": "webkit",
@@ -85,7 +85,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 5
         },
         "id": "Mobile Chrome",
         "name": "Mobile Chrome",
@@ -101,7 +101,7 @@
         "repeatEach": 1,
         "retries": 0,
         "metadata": {
-          "actualWorkers": 3
+          "actualWorkers": 5
         },
         "id": "Mobile Safari",
         "name": "Mobile Safari",
@@ -126,20 +126,20 @@
   },
   "suites": [
     {
-      "title": "dashboard-simple.spec.ts",
-      "file": "dashboard-simple.spec.ts",
+      "title": "screenshot-only.spec.ts",
+      "file": "screenshot-only.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "CCOPINAI Dashboard - Simple Tests",
-          "file": "dashboard-simple.spec.ts",
+          "title": "CCOPINAI Navigation Screenshots",
+          "file": "screenshot-only.spec.ts",
           "line": 3,
           "column": 6,
           "specs": [
             {
-              "title": "Dashboard Load and Screenshot Test",
+              "title": "Take navigation flow screenshots",
               "ok": false,
               "tags": [],
               "tests": [
@@ -154,114 +154,314 @@
                       "workerIndex": 0,
                       "parallelIndex": 0,
                       "status": "failed",
-                      "duration": 2,
+                      "duration": 6472,
                       "error": {
-                        "message": "Error: browserType.connect: WebSocket error: ws://127.0.0.1:9222/ 404 Not Found\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:9222/\u001b[22m\n\u001b[2m  - <ws unexpected response> ws://127.0.0.1:9222/ 404 Not Found\u001b[22m\n\u001b[2m  - <ws error> ws://127.0.0.1:9222/ error WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws connect error> ws://127.0.0.1:9222/ WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws disconnected> ws://127.0.0.1:9222/ code=1006 reason=\u001b[22m\n",
-                        "stack": "Error: browserType.connect: WebSocket error: ws://127.0.0.1:9222/ 404 Not Found\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:9222/\u001b[22m\n\u001b[2m  - <ws unexpected response> ws://127.0.0.1:9222/ 404 Not Found\u001b[22m\n\u001b[2m  - <ws error> ws://127.0.0.1:9222/ error WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws connect error> ws://127.0.0.1:9222/ WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws disconnected> ws://127.0.0.1:9222/ code=1006 reason=\u001b[22m\n"
+                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n",
+                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n\n    at /Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts:10:24",
+                        "location": {
+                          "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                          "column": 24,
+                          "line": 10
+                        },
+                        "snippet": "\u001b[0m \u001b[90m  8 |\u001b[39m     \n \u001b[90m  9 |\u001b[39m     \u001b[90m// Verify page loaded\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[32m'Audio Transcript MCP'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m     \n \u001b[90m 12 |\u001b[39m     \u001b[90m// Take screenshot of welcome screen (desktop)\u001b[39m\n \u001b[90m 13 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39msetViewportSize({ width\u001b[33m:\u001b[39m \u001b[35m1280\u001b[39m\u001b[33m,\u001b[39m height\u001b[33m:\u001b[39m \u001b[35m720\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
-                          "message": "Error: browserType.connect: WebSocket error: ws://127.0.0.1:9222/ 404 Not Found\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:9222/\u001b[22m\n\u001b[2m  - <ws unexpected response> ws://127.0.0.1:9222/ 404 Not Found\u001b[22m\n\u001b[2m  - <ws error> ws://127.0.0.1:9222/ error WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws connect error> ws://127.0.0.1:9222/ WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws disconnected> ws://127.0.0.1:9222/ code=1006 reason=\u001b[22m\n"
+                          "location": {
+                            "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                            "column": 24,
+                            "line": 10
+                          },
+                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n\n\n\u001b[0m \u001b[90m  8 |\u001b[39m     \n \u001b[90m  9 |\u001b[39m     \u001b[90m// Verify page loaded\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[32m'Audio Transcript MCP'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m     \n \u001b[90m 12 |\u001b[39m     \u001b[90m// Take screenshot of welcome screen (desktop)\u001b[39m\n \u001b[90m 13 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39msetViewportSize({ width\u001b[33m:\u001b[39m \u001b[35m1280\u001b[39m\u001b[33m,\u001b[39m height\u001b[33m:\u001b[39m \u001b[35m720\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts:10:24\u001b[22m"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-07-06T22:13:34.505Z",
+                      "startTime": "2025-07-07T14:34:12.044Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-chromium/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-chromium/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-chromium/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                        "column": 24,
+                        "line": 10
+                      }
                     }
                   ],
                   "status": "unexpected"
-                }
-              ],
-              "id": "ec11130106e9ff068a6b-d2bd103976baf6aaec2b",
-              "file": "dashboard-simple.spec.ts",
-              "line": 4,
-              "column": 7
-            },
-            {
-              "title": "Dashboard Button Interaction Test",
-              "ok": false,
-              "tags": [],
-              "tests": [
+                },
                 {
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
+                  "projectId": "firefox",
+                  "projectName": "firefox",
                   "results": [
                     {
                       "workerIndex": 1,
                       "parallelIndex": 1,
                       "status": "failed",
-                      "duration": 2,
+                      "duration": 7025,
                       "error": {
-                        "message": "Error: browserType.connect: WebSocket error: ws://127.0.0.1:9222/ 404 Not Found\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:9222/\u001b[22m\n\u001b[2m  - <ws unexpected response> ws://127.0.0.1:9222/ 404 Not Found\u001b[22m\n\u001b[2m  - <ws error> ws://127.0.0.1:9222/ error WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws connect error> ws://127.0.0.1:9222/ WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws disconnected> ws://127.0.0.1:9222/ code=1006 reason=\u001b[22m\n",
-                        "stack": "Error: browserType.connect: WebSocket error: ws://127.0.0.1:9222/ 404 Not Found\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:9222/\u001b[22m\n\u001b[2m  - <ws unexpected response> ws://127.0.0.1:9222/ 404 Not Found\u001b[22m\n\u001b[2m  - <ws error> ws://127.0.0.1:9222/ error WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws connect error> ws://127.0.0.1:9222/ WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws disconnected> ws://127.0.0.1:9222/ code=1006 reason=\u001b[22m\n"
+                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n",
+                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n\n    at /Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts:10:24",
+                        "location": {
+                          "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                          "column": 24,
+                          "line": 10
+                        },
+                        "snippet": "\u001b[0m \u001b[90m  8 |\u001b[39m     \n \u001b[90m  9 |\u001b[39m     \u001b[90m// Verify page loaded\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[32m'Audio Transcript MCP'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m     \n \u001b[90m 12 |\u001b[39m     \u001b[90m// Take screenshot of welcome screen (desktop)\u001b[39m\n \u001b[90m 13 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39msetViewportSize({ width\u001b[33m:\u001b[39m \u001b[35m1280\u001b[39m\u001b[33m,\u001b[39m height\u001b[33m:\u001b[39m \u001b[35m720\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
-                          "message": "Error: browserType.connect: WebSocket error: ws://127.0.0.1:9222/ 404 Not Found\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:9222/\u001b[22m\n\u001b[2m  - <ws unexpected response> ws://127.0.0.1:9222/ 404 Not Found\u001b[22m\n\u001b[2m  - <ws error> ws://127.0.0.1:9222/ error WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws connect error> ws://127.0.0.1:9222/ WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws disconnected> ws://127.0.0.1:9222/ code=1006 reason=\u001b[22m\n"
+                          "location": {
+                            "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                            "column": 24,
+                            "line": 10
+                          },
+                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n\n\n\u001b[0m \u001b[90m  8 |\u001b[39m     \n \u001b[90m  9 |\u001b[39m     \u001b[90m// Verify page loaded\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[32m'Audio Transcript MCP'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m     \n \u001b[90m 12 |\u001b[39m     \u001b[90m// Take screenshot of welcome screen (desktop)\u001b[39m\n \u001b[90m 13 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39msetViewportSize({ width\u001b[33m:\u001b[39m \u001b[35m1280\u001b[39m\u001b[33m,\u001b[39m height\u001b[33m:\u001b[39m \u001b[35m720\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts:10:24\u001b[22m"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-07-06T22:13:34.496Z",
+                      "startTime": "2025-07-07T14:34:12.044Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-firefox/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-firefox/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-firefox/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                        "column": 24,
+                        "line": 10
+                      }
                     }
                   ],
                   "status": "unexpected"
-                }
-              ],
-              "id": "ec11130106e9ff068a6b-2e07d19a8e8aea87bf5e",
-              "file": "dashboard-simple.spec.ts",
-              "line": 36,
-              "column": 7
-            },
-            {
-              "title": "Dashboard Mobile View Test",
-              "ok": false,
-              "tags": [],
-              "tests": [
+                },
                 {
                   "timeout": 30000,
                   "annotations": [],
                   "expectedStatus": "passed",
-                  "projectId": "chromium",
-                  "projectName": "chromium",
+                  "projectId": "webkit",
+                  "projectName": "webkit",
                   "results": [
                     {
                       "workerIndex": 2,
                       "parallelIndex": 2,
                       "status": "failed",
-                      "duration": 2,
+                      "duration": 6827,
                       "error": {
-                        "message": "Error: browserType.connect: WebSocket error: ws://127.0.0.1:9222/ 404 Not Found\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:9222/\u001b[22m\n\u001b[2m  - <ws unexpected response> ws://127.0.0.1:9222/ 404 Not Found\u001b[22m\n\u001b[2m  - <ws error> ws://127.0.0.1:9222/ error WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws connect error> ws://127.0.0.1:9222/ WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws disconnected> ws://127.0.0.1:9222/ code=1006 reason=\u001b[22m\n",
-                        "stack": "Error: browserType.connect: WebSocket error: ws://127.0.0.1:9222/ 404 Not Found\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:9222/\u001b[22m\n\u001b[2m  - <ws unexpected response> ws://127.0.0.1:9222/ 404 Not Found\u001b[22m\n\u001b[2m  - <ws error> ws://127.0.0.1:9222/ error WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws connect error> ws://127.0.0.1:9222/ WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws disconnected> ws://127.0.0.1:9222/ code=1006 reason=\u001b[22m\n"
+                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n",
+                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n\n    at /Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts:10:24",
+                        "location": {
+                          "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                          "column": 24,
+                          "line": 10
+                        },
+                        "snippet": "\u001b[0m \u001b[90m  8 |\u001b[39m     \n \u001b[90m  9 |\u001b[39m     \u001b[90m// Verify page loaded\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[32m'Audio Transcript MCP'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m     \n \u001b[90m 12 |\u001b[39m     \u001b[90m// Take screenshot of welcome screen (desktop)\u001b[39m\n \u001b[90m 13 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39msetViewportSize({ width\u001b[33m:\u001b[39m \u001b[35m1280\u001b[39m\u001b[33m,\u001b[39m height\u001b[33m:\u001b[39m \u001b[35m720\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
                       },
                       "errors": [
                         {
-                          "message": "Error: browserType.connect: WebSocket error: ws://127.0.0.1:9222/ 404 Not Found\nCall log:\n\u001b[2m  - <ws connecting> ws://127.0.0.1:9222/\u001b[22m\n\u001b[2m  - <ws unexpected response> ws://127.0.0.1:9222/ 404 Not Found\u001b[22m\n\u001b[2m  - <ws error> ws://127.0.0.1:9222/ error WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws connect error> ws://127.0.0.1:9222/ WebSocket was closed before the connection was established\u001b[22m\n\u001b[2m  - <ws disconnected> ws://127.0.0.1:9222/ code=1006 reason=\u001b[22m\n"
+                          "location": {
+                            "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                            "column": 24,
+                            "line": 10
+                          },
+                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n\n\n\u001b[0m \u001b[90m  8 |\u001b[39m     \n \u001b[90m  9 |\u001b[39m     \u001b[90m// Verify page loaded\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[32m'Audio Transcript MCP'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m     \n \u001b[90m 12 |\u001b[39m     \u001b[90m// Take screenshot of welcome screen (desktop)\u001b[39m\n \u001b[90m 13 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39msetViewportSize({ width\u001b[33m:\u001b[39m \u001b[35m1280\u001b[39m\u001b[33m,\u001b[39m height\u001b[33m:\u001b[39m \u001b[35m720\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts:10:24\u001b[22m"
                         }
                       ],
                       "stdout": [],
                       "stderr": [],
                       "retry": 0,
-                      "startTime": "2025-07-06T22:13:34.496Z",
+                      "startTime": "2025-07-07T14:34:12.045Z",
                       "annotations": [],
-                      "attachments": []
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-webkit/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-webkit/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-webkit/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                        "column": 24,
+                        "line": 10
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                },
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Chrome",
+                  "projectName": "Mobile Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 3,
+                      "parallelIndex": 3,
+                      "status": "failed",
+                      "duration": 6526,
+                      "error": {
+                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n",
+                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n\n    at /Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts:10:24",
+                        "location": {
+                          "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                          "column": 24,
+                          "line": 10
+                        },
+                        "snippet": "\u001b[0m \u001b[90m  8 |\u001b[39m     \n \u001b[90m  9 |\u001b[39m     \u001b[90m// Verify page loaded\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[32m'Audio Transcript MCP'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m     \n \u001b[90m 12 |\u001b[39m     \u001b[90m// Take screenshot of welcome screen (desktop)\u001b[39m\n \u001b[90m 13 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39msetViewportSize({ width\u001b[33m:\u001b[39m \u001b[35m1280\u001b[39m\u001b[33m,\u001b[39m height\u001b[33m:\u001b[39m \u001b[35m720\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                            "column": 24,
+                            "line": 10
+                          },
+                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n\n\n\u001b[0m \u001b[90m  8 |\u001b[39m     \n \u001b[90m  9 |\u001b[39m     \u001b[90m// Verify page loaded\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[32m'Audio Transcript MCP'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m     \n \u001b[90m 12 |\u001b[39m     \u001b[90m// Take screenshot of welcome screen (desktop)\u001b[39m\n \u001b[90m 13 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39msetViewportSize({ width\u001b[33m:\u001b[39m \u001b[35m1280\u001b[39m\u001b[33m,\u001b[39m height\u001b[33m:\u001b[39m \u001b[35m720\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts:10:24\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-07-07T14:34:12.044Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-Mobile-Chrome/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-Mobile-Chrome/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-Mobile-Chrome/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                        "column": 24,
+                        "line": 10
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                },
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Safari",
+                  "projectName": "Mobile Safari",
+                  "results": [
+                    {
+                      "workerIndex": 4,
+                      "parallelIndex": 4,
+                      "status": "failed",
+                      "duration": 6824,
+                      "error": {
+                        "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n",
+                        "stack": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n\n    at /Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts:10:24",
+                        "location": {
+                          "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                          "column": 24,
+                          "line": 10
+                        },
+                        "snippet": "\u001b[0m \u001b[90m  8 |\u001b[39m     \n \u001b[90m  9 |\u001b[39m     \u001b[90m// Verify page loaded\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[32m'Audio Transcript MCP'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m     \n \u001b[90m 12 |\u001b[39m     \u001b[90m// Take screenshot of welcome screen (desktop)\u001b[39m\n \u001b[90m 13 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39msetViewportSize({ width\u001b[33m:\u001b[39m \u001b[35m1280\u001b[39m\u001b[33m,\u001b[39m height\u001b[33m:\u001b[39m \u001b[35m720\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                            "column": 24,
+                            "line": 10
+                          },
+                          "message": "Error: \u001b[31mTimed out 5000ms waiting for \u001b[39m\u001b[2mexpect(\u001b[22m\u001b[31mpage\u001b[39m\u001b[2m).\u001b[22mtoHaveTitle\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nLocator: locator(':root')\nExpected string: \u001b[32m\"Audio Transcript MCP\"\u001b[39m\nReceived string: \u001b[31m\"Welcome\"\u001b[39m\nCall log:\n\u001b[2m  - Expect \"toHaveTitle\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator(':root')\u001b[22m\n\u001b[2m    9 × locator resolved to <html lang=\"en\">…</html>\u001b[22m\n\u001b[2m      - unexpected value \"Welcome\"\u001b[22m\n\n\n\u001b[0m \u001b[90m  8 |\u001b[39m     \n \u001b[90m  9 |\u001b[39m     \u001b[90m// Verify page loaded\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 10 |\u001b[39m     \u001b[36mawait\u001b[39m expect(page)\u001b[33m.\u001b[39mtoHaveTitle(\u001b[32m'Audio Transcript MCP'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 11 |\u001b[39m     \n \u001b[90m 12 |\u001b[39m     \u001b[90m// Take screenshot of welcome screen (desktop)\u001b[39m\n \u001b[90m 13 |\u001b[39m     \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39msetViewportSize({ width\u001b[33m:\u001b[39m \u001b[35m1280\u001b[39m\u001b[33m,\u001b[39m height\u001b[33m:\u001b[39m \u001b[35m720\u001b[39m })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at /Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts:10:24\u001b[22m"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-07-07T14:34:12.046Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "screenshot",
+                          "contentType": "image/png",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-Mobile-Safari/test-failed-1.png"
+                        },
+                        {
+                          "name": "video",
+                          "contentType": "video/webm",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-Mobile-Safari/video.webm"
+                        },
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "/Users/jason/src/cco-pinai/tests/test-results/screenshot-only-CCOPINAI-N-dd239-navigation-flow-screenshots-Mobile-Safari/error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "/Users/jason/src/cco-pinai/tests/screenshot-only.spec.ts",
+                        "column": 24,
+                        "line": 10
+                      }
                     }
                   ],
                   "status": "unexpected"
                 }
               ],
-              "id": "ec11130106e9ff068a6b-3794af85bf42d52f85cb",
-              "file": "dashboard-simple.spec.ts",
-              "line": 65,
+              "id": "552df61f33e438044bc3-0a3daddfdaab962e470e",
+              "file": "screenshot-only.spec.ts",
+              "line": 4,
               "column": 7
             }
           ]
@@ -271,11 +471,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-07-06T22:13:33.995Z",
-    "duration": 550.675,
+    "startTime": "2025-07-07T14:34:11.626Z",
+    "duration": 8827.972,
     "expected": 0,
     "skipped": 0,
-    "unexpected": 3,
+    "unexpected": 5,
     "flaky": 0
   }
 }
