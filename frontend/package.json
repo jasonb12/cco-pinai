@@ -1,18 +1,39 @@
 {
-  "name": "frontend",
+  "name": "cco-pinai-frontend",
   "version": "1.0.0",
+  "description": "CCOPINAI Frontend - React Native/Expo app with Tamagui theming",
   "main": "index.ts",
+  "private": true,
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build": "expo build",
+    "build:web": "expo build:web",
+    "test": "jest",
+    "lint": "eslint . --ext .ts,.tsx",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
+    "@expo/vector-icons": "^14.0.0",
     "@nozbe/watermelondb": "^0.28.0",
-    "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-navigation/bottom-tabs": "^6.6.1",
+    "@react-navigation/native": "^6.1.18",
+    "@react-navigation/native-stack": "^6.11.0",
     "@supabase/supabase-js": "^2.50.3",
+    "@tamagui/animations-react-native": "^1.130.8",
+    "@tamagui/button": "^1.130.8",
+    "@tamagui/card": "^1.130.8",
+    "@tamagui/config": "^1.130.8",
+    "@tamagui/core": "^1.130.8",
+    "@tamagui/input": "^1.130.8",
+    "@tamagui/scroll-view": "^1.130.8",
+    "@tamagui/separator": "^1.130.8",
+    "@tamagui/sheet": "^1.130.8",
+    "@tamagui/text": "^1.130.8",
     "expo": "~53.0.17",
     "expo-auth-session": "^6.2.1",
     "expo-crypto": "^14.1.5",
@@ -23,13 +44,35 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
+    "react-native-gesture-handler": "~2.24.0",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-safe-area-context": "5.4.0",
+    "react-native-screens": "~4.11.1",
     "react-native-url-polyfill": "^2.0.0",
-    "react-native-web": "^0.20.0"
+    "react-native-web": "^0.20.0",
+    "tamagui": "^1.130.8",
+    "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@babel/plugin-syntax-import-meta": "^7.10.4",
+    "@tamagui/babel-plugin": "^1.130.8",
     "@types/react": "~19.0.10",
+    "babel-plugin-transform-import-meta": "^2.3.3",
     "typescript": "~5.8.3"
   },
-  "private": true
+  "keywords": [
+    "expo",
+    "react-native",
+    "tamagui",
+    "supabase",
+    "watermelondb",
+    "zustand",
+    "navigation"
+  ],
+  "author": "CCOPINAI Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

@@ -70,16 +70,22 @@ Targets: Sync P95 ≤ 5 min • AI proc P95 ≤ 30 s • Query P99 ≤ 2 s.
 
 | Layer | Tool | Notes |
 |-------|------|-------|
-| Component lib | **Tamagui** or **React-Native Paper** |
-| Utility CSS | **Nativewind** (Tailwind RN tokens) |
-| Theme engine | Tailwind tokens ➜ `ThemeProvider` (dark / light / brand) |
-| Global State | **Zustand** |
-| Navigation | **react-navigation v7** |
-| Animation | **react-native-reanimated v3** |
-| Forms | **react-hook-form** |
-| Testing | **Playwright + Jest + Testing-Library** |
-| OTA | **EAS Update** |
-| CI/CD | **GitHub Actions** |
+| Component lib | **Tamagui** | Modern React Native UI library with built-in theming |
+| Utility CSS | **NativeWind** | Tailwind CSS for React Native |
+| Theme engine | **Tamagui ThemeProvider** | Built-in dark/light/brand theme support |
+| Global State | **Zustand** | Lightweight state management |
+| Navigation | **react-navigation v7** | Standard React Native navigation |
+| Animation | **react-native-reanimated v3** | High-performance animations |
+| Forms | **react-hook-form** | Performant form handling |
+| Testing | **Playwright + Jest + Testing-Library** | Comprehensive testing suite |
+| OTA | **EAS Update** | Over-the-air updates |
+| CI/CD | **GitHub Actions** | Automated deployment pipeline |
+
+**Theme Implementation:**
+- Custom brand themes (light/dark) with iOS-style color palette
+- Automatic system theme detection
+- Consistent design tokens across all components
+- Performance-optimized styling with compile-time optimizations
 
 ### 4.4 Multimodality  
 

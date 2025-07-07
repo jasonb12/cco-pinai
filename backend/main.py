@@ -11,6 +11,7 @@ import logging
 from src.services.limitless import get_limitless_service, LimitlessAPIError
 from src.services.sync import get_sync_service, SyncState
 from src.services.database import get_database_service
+from src.mcp.server import mcp_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,6 +25,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include MCP router
+app.include_router(mcp_router)
 
 class MCPInstallRequest(BaseModel):
     name: str

@@ -1,0 +1,29 @@
+{
+  "name": "cco-pinai-backend",
+  "version": "1.0.0",
+  "description": "CCOPINAI Backend - FastAPI server with Limitless.ai integration",
+  "private": true,
+  "scripts": {
+    "start": "python main.py",
+    "dev": "python main.py --reload",
+    "install": "pip install -r requirements.txt",
+    "setup": "python -m venv venv && source venv/bin/activate && pip install -r requirements.txt",
+    "test": "python -m pytest",
+    "lint": "python -m flake8 .",
+    "format": "python -m black ."
+  },
+  "keywords": [
+    "fastapi",
+    "python",
+    "mcp",
+    "limitless-ai",
+    "supabase",
+    "transcription",
+    "websocket"
+  ],
+  "author": "CCOPINAI Team",
+  "license": "MIT",
+  "engines": {
+    "python": ">=3.11.0"
+  }
+} 

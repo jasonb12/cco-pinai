@@ -2,6 +2,39 @@
 
 A full-stack application that combines audio file transcription with Limitless.ai lifelog synchronization. Built with React Native (Expo), FastAPI, and Supabase.
 
+## ⚠️ MONOREPO STRUCTURE
+
+**IMPORTANT: This is a monorepo with separate frontend and backend directories. Do NOT install packages or run build commands from the root directory!**
+
+### Project Structure
+- **`frontend/`** - React Native/Expo application with React Navigation v7 and Tamagui theming
+- **`backend/`** - FastAPI Python backend with Limitless.ai integration
+- **`scripts/`** - Setup and development scripts
+- **`supabase/`** - Database schema and migrations
+
+### Development Commands
+```bash
+# ✅ CORRECT - Run from appropriate directories:
+cd frontend && npm start        # Start frontend
+cd backend && python main.py   # Start backend
+
+# ✅ CORRECT - Use monorepo scripts from root:
+npm run frontend               # Start frontend (runs cd frontend && npm start)
+npm run backend               # Start backend (runs cd backend && python main.py)
+npm run dev                   # Start both services
+
+# ❌ WRONG - Don't run these from root:
+npm start                     # Shows warning and exits
+npm install                   # Shows warning and exits
+```
+
+### Build Configuration
+- **Frontend configs**: `frontend/babel.config.js`, `frontend/metro.config.js`, `frontend/tamagui.config.ts`
+- **Backend configs**: `backend/requirements.txt`, `backend/main.py`
+- **Root**: Only workspace coordination (`package.json` with workspaces)
+
+**Rule of thumb**: If you're configuring builds, installing packages, or running dev servers, work in `frontend/` or `backend/` directories, not root.
+
 ## 🚀 Features
 
 - **Audio File Upload & Transcription**: Upload audio files and get automated transcriptions
@@ -57,6 +90,22 @@ A full-stack application that combines audio file transcription with Limitless.a
 - Supabase account
 - Limitless.ai account with API access (and Pendant)
 
+## 🎨 Theme Framework
+
+The app uses **Tamagui** for theming and UI components:
+- Modern React Native UI library with built-in theming
+- Custom brand themes (light/dark) with iOS-style color palette
+- Automatic system theme detection
+- Performance-optimized styling with compile-time optimizations
+- Consistent design tokens across all components
+
+### Theme Dependencies
+- `@tamagui/core` - Core theming engine
+- `@tamagui/config` - Default configuration
+- `@tamagui/animations-react-native` - Animation support
+- `nativewind` - Tailwind CSS for React Native
+- `zustand` - Theme state management
+
 ## 🛠️ Installation
 
 ### Quick Start
@@ -67,6 +116,9 @@ git clone https://github.com/yourusername/cco-pinai.git
 cd cco-pinai
 chmod +x scripts/*.sh
 ./scripts/setup_all.sh
+
+# Setup theme framework
+./scripts/setup_theme.sh
 ```
 
 ### Manual Setup
@@ -96,6 +148,10 @@ cd frontend
 npm install
 cp .env.example .env
 # Edit .env with your configuration
+
+# Setup theme framework
+cd ..
+./scripts/setup_theme.sh
 ```
 
 #### 4. Supabase Setup
@@ -191,155 +247,4 @@ See [API_DOCUMENTATION.md](./docs/API_DOCUMENTATION.md) for detailed endpoint do
 - `GET /limitless/lifelogs/recent` - Get recent lifelogs
 
 #### Transcript Management
-- `GET /transcripts/{user_id}` - Get user's transcripts
-- `POST /transcript/process` - Process uploaded audio
-- `GET /transcripts/{user_id}/stats` - Get transcript statistics
-
-#### MCP Integration
-- `GET /mcp/list` - List available MCP servers
-- `POST /mcp/install` - Install MCP server
-
-#### Real-time
-- `WebSocket /ws` - Real-time updates
-
-## 💻 Development
-
-### Running the Services
-
-```bash
-# Start both frontend and backend
-npm run dev
-
-# Or run separately:
-
-# Backend only
-cd backend
-python main.py
-
-# Frontend only
-cd frontend
-npm start
-```
-
-### Running Tests
-
-```bash
-# Test Limitless integration
-cd backend
-python test_with_real_user.py
-
-# Test database sync
-python test_database_sync.py
-
-# Demo complete integration
-python demo_complete_integration.py
-```
-
-### Development Workflow
-
-1. **Backend Development**
-   - API runs on `http://localhost:8000`
-   - FastAPI automatic reload enabled
-   - Swagger docs at `/docs`
-
-2. **Frontend Development**
-   - Expo DevTools in browser
-   - Hot reload enabled
-   - Shake device for dev menu
-
-## 🚀 Deployment
-
-See [DEPLOYMENT.md](./docs/DEPLOYMENT.md) for detailed deployment instructions.
-
-### Quick Deploy
-
-1. **Backend (Render/Railway)**
-   ```bash
-   cd backend
-   # Follow platform-specific deployment
-   ```
-
-2. **Frontend (Expo EAS)**
-   ```bash
-   cd frontend
-   eas build --platform all
-   eas submit
-   ```
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-1. **Database Migration Errors**
-   ```bash
-   # Reset and reapply migrations
-   supabase db reset
-   supabase db push -p YOUR_PASSWORD
-   ```
-
-2. **Limitless API Connection**
-   - Verify API key is valid
-   - Ensure Pendant is paired
-   - Check rate limits
-
-3. **Authentication Issues**
-   - Verify OAuth redirect URLs
-   - Check Supabase auth settings
-   - Ensure environment variables are set
-
-4. **WebSocket Connection**
-   - Check CORS settings
-   - Verify backend is running
-   - Check firewall/proxy settings
-
-### Debug Mode
-
-```python
-# Backend debug logging
-logging.basicConfig(level=logging.DEBUG)
-```
-
-```javascript
-// Frontend debug
-if (__DEV__) {
-  console.log('Debug info:', data);
-}
-```
-
-## 📂 Project Structure
-
-```
-cco-pinai/
-├── frontend/               # Expo React Native app
-│   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── services/      # API and storage services
-│   │   ├── config/        # Configuration files
-│   │   └── types/         # TypeScript definitions
-│   └── App.tsx            # Main app component
-├── backend/               # FastAPI backend
-│   ├── src/
-│   │   └── services/      # Business logic
-│   │       ├── limitless.py    # Limitless API client
-│   │       ├── sync.py         # Sync orchestration
-│   │       └── database.py     # Supabase integration
-│   └── main.py            # FastAPI app
-├── supabase/              # Database files
-│   └── migrations/        # SQL migration files
-├── scripts/               # Setup and utility scripts
-└── docs/                  # Documentation
-```
-
-## 📄 License
-
-MIT License - see [LICENSE](./LICENSE) for details
-
-## 🤝 Contributing
-
-See [CONTRIBUTING.md](./docs/CONTRIBUTING.md) for contribution guidelines.
-
-## 📞 Support
-
-- Issues: [GitHub Issues](https://github.com/yourusername/cco-pinai/issues)
-- Discussions: [GitHub Discussions](https://github.com/yourusername/cco-pinai/discussions)
-- Documentation: [/docs](./docs)
+- `GET /transcripts/{user_id}`
