@@ -66,8 +66,8 @@ if [[ ! -d "frontend" ]]; then
 fi
 
 # Check if port is busy and handle accordingly
-if lsof -i :$PORT > /dev/null 2>&1; then
-    EXISTING_PID=$(lsof -ti :$PORT)
+if lsof -i :$PORT -sTCP:LISTEN > /dev/null 2>&1; then
+    EXISTING_PID=$(lsof -ti :$PORT -sTCP:LISTEN)
     echo "🔍 Port $PORT is already in use by PID: $EXISTING_PID"
     
     # Check if it's an Expo process
@@ -92,8 +92,8 @@ if lsof -i :$PORT > /dev/null 2>&1; then
     else
         echo "❌ Port $PORT is busy with non-Expo process"
         echo ""
-        echo "🔍 Process details:"
-        lsof -i :$PORT
+        echo "🔍 Process details (LISTEN state only):"
+        lsof -i :$PORT -sTCP:LISTEN
         echo ""
         echo "💡 Solutions:"
         echo "   1. Kill process: kill -9 $EXISTING_PID"

@@ -329,7 +329,7 @@ export const monitorStore = create<MonitorState>((set, get) => ({
           id: '1',
           job_id: 'job_123',
           transcript_id: 'transcript_456',
-          stage: 'completed',
+          stage: 'executed',
           status: 'success',
           payload: { actions_extracted: 3 },
           duration_ms: 1500,

@@ -54,10 +54,27 @@ class AuthService {
 
   private async initializeAuth() {
     try {
-      // Check for existing session
+      // First, try to load a stored session (for remember me functionality)
+      const storedSession = await this.loadStoredSession();
+      if (storedSession) {
+        this.currentSession = storedSession;
+        // Validate stored session
+        const isValid = await this.validateSession();
+        if (!isValid) {
+          await this.clearStoredSession();
+          this.currentSession = null;
+        }
+      }
+
+      // Check for active Supabase session
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         this.currentSession = this.mapSupabaseSession(session);
+        await this.storeSession(this.currentSession);
+        this.notifySessionChange();
+      } else if (this.currentSession) {
+        // We have a stored session but no active Supabase session
+        // This happens when the user has "remember me" enabled
         this.notifySessionChange();
       }
 
@@ -67,10 +84,18 @@ class AuthService {
         
         if (session) {
           this.currentSession = this.mapSupabaseSession(session);
-          await this.storeSession(this.currentSession);
+          
+          // Check if user wants to be remembered
+          const rememberMe = await this.getRememberMePreference();
+          if (rememberMe) {
+            await this.storeSession(this.currentSession);
+          }
         } else {
-          this.currentSession = null;
-          await this.clearStoredSession();
+          const rememberMe = await this.getRememberMePreference();
+          if (!rememberMe) {
+            this.currentSession = null;
+            await this.clearStoredSession();
+          }
         }
         
         this.notifySessionChange();
@@ -110,6 +135,29 @@ class AuthService {
       await AsyncStorage.removeItem('auth_session');
     } catch (error) {
       console.error('Error clearing session:', error);
+    }
+  }
+
+  private async loadStoredSession(): Promise<AuthUserSession | null> {
+    try {
+      const storedSessionData = await AsyncStorage.getItem('auth_session');
+      if (storedSessionData) {
+        return JSON.parse(storedSessionData);
+      }
+      return null;
+    } catch (error) {
+      console.error('Error loading stored session:', error);
+      return null;
+    }
+  }
+
+  private async getRememberMePreference(): Promise<boolean> {
+    try {
+      const rememberMe = await AsyncStorage.getItem('remember_me_preference');
+      return rememberMe === 'true';
+    } catch (error) {
+      console.error('Error getting remember me preference:', error);
+      return false;
     }
   }
 
@@ -187,15 +235,43 @@ class AuthService {
     }
   }
 
+  // Enhanced sign out with remember me handling
   public async signOut() {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
         throw error;
       }
+      
+      // Clear stored session and remember me preference
+      await this.clearStoredSession();
+      await AsyncStorage.removeItem('remember_me_preference');
+      await AsyncStorage.removeItem('saved_credentials');
+      
+      this.currentSession = null;
+      this.notifySessionChange();
     } catch (error: any) {
       console.error('Sign out error:', error);
       throw new Error(error.message || 'Sign out failed');
+    }
+  }
+
+  // New method: Check if user is remembered
+  public async isUserRemembered(): Promise<boolean> {
+    return await this.getRememberMePreference();
+  }
+
+  // New method: Get saved credentials for remember me
+  public async getSavedCredentials(): Promise<{ email: string } | null> {
+    try {
+      const savedCredentials = await AsyncStorage.getItem('saved_credentials');
+      if (savedCredentials) {
+        return JSON.parse(savedCredentials);
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting saved credentials:', error);
+      return null;
     }
   }
 
@@ -483,6 +559,7 @@ class AuthService {
     }
   }
 
+  // Enhanced session validation with auto-refresh
   public async validateSession(): Promise<boolean> {
     try {
       if (!this.currentSession) {
@@ -492,9 +569,25 @@ class AuthService {
       // Check if token is expired
       const now = Date.now() / 1000;
       if (this.currentSession.expires_at < now) {
-        // Try to refresh
-        await this.refreshSession();
-        return !!this.currentSession;
+        console.log('Session expired, attempting to refresh...');
+        
+        // Try to refresh the session
+        try {
+          await this.refreshSession();
+          return !!this.currentSession;
+        } catch (refreshError) {
+          console.error('Failed to refresh session:', refreshError);
+          
+          // If refresh fails, check if user wants to be remembered
+          const rememberMe = await this.getRememberMePreference();
+          if (!rememberMe) {
+            // Clear session if user doesn't want to be remembered
+            this.currentSession = null;
+            await this.clearStoredSession();
+          }
+          
+          return false;
+        }
       }
 
       return true;

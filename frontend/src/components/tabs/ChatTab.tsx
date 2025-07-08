@@ -1,256 +1,527 @@
 /**
- * Chat Tab - Transcript List and Chat Interface
+ * Chat Tab - Complete chat interface with transcripts and AI chat
  * Based on PRD-UI.md specifications
  */
 import React, { useState, useEffect } from 'react';
-import { Alert, FlatList } from 'react-native';
 import {
   View,
   Text,
-  YStack,
-  XStack,
-  Button,
-  Card,
+  StyleSheet,
   ScrollView,
-} from '@tamagui/core';
-import { SafeAreaView } from 'react-native-safe-area-context';
+  TouchableOpacity,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useThemeColors } from '../../contexts/ThemeContext';
+import { ActionType } from '../../types/actions';
 
-import { useThemeStore } from '../../stores/themeStore';
-import { useLoading } from '../../hooks/useLoading';
-import { LoadingButton } from '../LoadingButton';
-import { LoadingOverlay } from '../LoadingOverlay';
-import { pickAudioFile, uploadAudioFile, validateAudioFile } from '../../services/fileUpload';
-import { api } from '../../services/api';
-import { TranscriptWebSocket } from '../../services/websocket';
-import { supabase } from '../../config/supabase';
-import { Transcript, MCPServer } from '../../types';
+// Import new components
+import TranscriptList, { Transcript } from '../chat/TranscriptList';
+import TranscriptCard from '../chat/TranscriptCard';
+import ChatInput, { ChatMessage } from '../chat/ChatInput';
+import ActionChips, { ActionChip } from '../chat/ActionChips';
+import TextProcessor from '../TextProcessor';
+
+// Mock data
+const mockTranscripts: Transcript[] = [
+  {
+    id: '1',
+    title: 'Team Meeting Discussion',
+    content: 'We need to schedule a team meeting with Sarah to discuss the quarterly goals and project timeline. The meeting should be next week, preferably on Tuesday at 2 PM in the main conference room. Also, I should send a follow-up email to the client about the proposal status.',
+    timestamp: new Date().toISOString(),
+    duration: '3:45',
+    actionCount: 2,
+    status: 'completed',
+    source: 'audio',
+    tags: ['meeting', 'planning', 'email'],
+  },
+  {
+    id: '2',
+    title: 'Client Call Notes',
+    content: 'The client wants to review the marketing budget for next quarter. They mentioned some concerns about the current spending allocation. I need to prepare a detailed breakdown and schedule a review meeting.',
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    duration: '12:30',
+    actionCount: 3,
+    status: 'completed',
+    source: 'audio',
+    tags: ['client', 'budget', 'review'],
+  },
+  {
+    id: '3',
+    title: 'Processing Audio File',
+    content: '',
+    timestamp: new Date(Date.now() - 300000).toISOString(),
+    duration: '5:20',
+    actionCount: 0,
+    status: 'processing',
+    source: 'upload',
+  },
+];
+
+const mockActionChips: ActionChip[] = [
+  {
+    id: 'schedule',
+    title: 'Schedule Events',
+    icon: 'calendar-outline',
+    type: ActionType.SCHEDULED_EVENT,
+    count: 3,
+    color: '#3b82f6',
+    onPress: () => console.log('Schedule events'),
+  },
+  {
+    id: 'send_emails',
+    title: 'Send Emails',
+    icon: 'mail-outline',
+    type: ActionType.EMAIL,
+    count: 2,
+    color: '#10b981',
+    onPress: () => console.log('Send emails'),
+  },
+  {
+    id: 'create_tasks',
+    title: 'Create Tasks',
+    icon: 'checkmark-circle-outline',
+    type: ActionType.TASK,
+    count: 4,
+    color: '#f59e0b',
+    onPress: () => console.log('Create tasks'),
+  },
+  {
+    id: 'set_reminders',
+    title: 'Set Reminders',
+    icon: 'alarm-outline',
+    type: ActionType.REMINDER,
+    count: 1,
+    color: '#ef4444',
+    onPress: () => console.log('Set reminders'),
+  },
+];
 
 export default function ChatTab() {
-  const { activeTheme } = useThemeStore();
-  const { isLoading, withLoading } = useLoading();
-  
-  const [user, setUser] = useState<any>(null);
-  const [mcps, setMcps] = useState<MCPServer[]>([]);
-  const [transcripts, setTranscripts] = useState<Transcript[]>([]);
-  const [websocket, setWebsocket] = useState<TranscriptWebSocket | null>(null);
-  
-  const backgroundColor = activeTheme === 'dark' ? '#000000' : '#ffffff';
-  const surfaceColor = activeTheme === 'dark' ? '#1c1c1e' : '#f8f9fa';
+  const colors = useThemeColors();
+  const [activeTab, setActiveTab] = useState<'processor' | 'transcripts' | 'chat'>('processor');
+  const [selectedTranscript, setSelectedTranscript] = useState<Transcript | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [transcripts, setTranscripts] = useState<Transcript[]>(mockTranscripts);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    // Get current user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
+  const handleTranscriptPress = (transcript: Transcript) => {
+    setSelectedTranscript(transcript);
+    setShowDetailModal(true);
+  };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    if (user) {
-      loadMCPs();
-      setupWebSocket();
-    }
-    return () => {
-      if (websocket) {
-        websocket.disconnect();
-      }
+  const handleSendMessage = async (message: string, context?: any) => {
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      content: message,
+      role: 'user',
+      timestamp: new Date().toISOString(),
+      context,
     };
-  }, [user]);
 
-  const setupWebSocket = () => {
-    const ws = new TranscriptWebSocket(
-      'ws://localhost:8000/ws',
-      (data) => {
-        console.log('WebSocket message:', data);
-        if (data.type === 'transcript_completed') {
-          setTranscripts(prev => 
-            prev.map(t => 
-              t.id === data.transcript_id 
-                ? { ...t, status: 'completed', transcript_text: data.transcript_text }
-                : t
-            )
-          );
-        }
-      },
-      (error) => {
-        console.error('WebSocket error:', error);
-      },
-      () => {
-        console.log('WebSocket closed');
-      }
-    );
-    ws.connect();
-    setWebsocket(ws);
+    setChatMessages(prev => [...prev, userMessage]);
+    setChatLoading(true);
+
+    // Simulate AI response
+    setTimeout(() => {
+      const aiResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        content: `I understand you're asking about "${message}". Based on your transcripts, I can help you with that. Would you like me to create specific actions or provide more details?`,
+        role: 'assistant',
+        timestamp: new Date().toISOString(),
+      };
+      
+      setChatMessages(prev => [...prev, aiResponse]);
+      setChatLoading(false);
+    }, 2000);
   };
 
-  const loadMCPs = async () => {
-    try {
-      await withLoading('loadMCPs', async () => {
-        const response = await api.listMCPs();
-        setMcps(response.mcps || []);
-      });
-    } catch (error: any) {
-      console.error('Error loading MCPs:', error);
-      Alert.alert('Error', 'Failed to load MCPs. Please try again.');
-    }
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    setRefreshing(false);
   };
 
-  const handleUploadAudio = async () => {
-    try {
-      await withLoading('uploadAudio', async () => {
-        const file = await pickAudioFile();
-        if (!file) return;
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'processor':
+        return (
+          <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.processorContainer}>
+              <TextProcessor />
+            </View>
+          </ScrollView>
+        );
 
-        const validation = validateAudioFile(file);
-        if (!validation.isValid) {
-          Alert.alert('Invalid File', validation.error || 'Please select a valid audio file');
-          return;
-        }
-
-        const { url } = await uploadAudioFile(file.uri, file.name, file.file);
-        
-        const newTranscript: Transcript = {
-          id: Date.now().toString(),
-          title: file.name,
-          audio_url: url,
-          status: 'processing',
-          user_id: user!.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        setTranscripts(prev => [...prev, newTranscript]);
-        
-        await api.processTranscript(url, newTranscript.id);
-      });
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to upload audio file');
-    }
-  };
-
-  const handleInstallMCP = async (mcpName: string) => {
-    try {
-      await withLoading(`installMCP-${mcpName}`, async () => {
-        await api.installMCP(mcpName);
-        Alert.alert('Success', `MCP ${mcpName} installed successfully`);
-        loadMCPs();
-      });
-    } catch (error: any) {
-      Alert.alert('Error', error.message || 'Failed to install MCP');
-    }
-  };
-  
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor }}>
-      <ScrollView flex={1} padding="$4">
-        <YStack space="$4">
-          {/* Header */}
-          <YStack space="$2">
-            <Text fontSize="$6" fontWeight="600" color="$color">
-              Chat & Transcripts
-        </Text>
-            <Text fontSize="$4" color="$color11">
-              Upload audio files and manage transcripts
-        </Text>
-      </YStack>
-
-          {/* Upload Button */}
-          <Card backgroundColor={surfaceColor} padding="$4">
-            <LoadingButton
-              title="Upload Audio File"
-              onPress={handleUploadAudio}
-              isLoading={isLoading('uploadAudio')}
-              style={{
-                backgroundColor: activeTheme === 'dark' ? '#34C759' : '#34C759',
-                padding: 16,
-                borderRadius: 8,
-                alignItems: 'center',
-              }}
+      case 'transcripts':
+        return (
+          <View style={styles.tabContent}>
+            <ActionChips
+              chips={mockActionChips}
+              title="Pending Actions"
+              horizontal={true}
+              showCount={true}
             />
-          </Card>
+            <TranscriptList
+              transcripts={transcripts}
+              onTranscriptPress={handleTranscriptPress}
+              onRefresh={handleRefresh}
+              refreshing={refreshing}
+              emptyMessage="No transcripts processed yet. Upload audio or enter text to get started."
+            />
+          </View>
+        );
 
-          {/* Transcripts */}
-          <YStack space="$3">
-            <Text fontSize="$5" fontWeight="600" color="$color">
-              Transcripts
-            </Text>
-            {transcripts.length === 0 ? (
-              <Card backgroundColor={surfaceColor} padding="$4">
-                <Text fontSize="$4" color="$color11" textAlign="center">
-                  No transcripts yet. Upload an audio file to get started.
-                </Text>
-              </Card>
-            ) : (
-              transcripts.map((item) => (
-                <Card key={item.id} backgroundColor={surfaceColor} padding="$4">
-                  <YStack space="$2">
-                    <Text fontSize="$4" fontWeight="600" color="$color">
-                      {item.title}
-                    </Text>
-                    <Text fontSize="$3" color="$color11">
-                      Status: {item.status}
-                    </Text>
-                    {item.transcript_text && (
-                      <Text fontSize="$3" color="$color" numberOfLines={3}>
-                        {item.transcript_text}
+      case 'chat':
+        return (
+          <KeyboardAvoidingView 
+            style={styles.chatContainer}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          >
+            <ScrollView 
+              style={styles.chatMessages}
+              contentContainerStyle={styles.chatMessagesContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {chatMessages.length === 0 ? (
+                <View style={styles.chatEmptyState}>
+                  <Ionicons name="chatbubbles-outline" size={64} color={colors.textSecondary} />
+                  <Text style={[styles.chatEmptyTitle, { color: colors.text }]}>
+                    Start a Conversation
+                  </Text>
+                  <Text style={[styles.chatEmptyDescription, { color: colors.textSecondary }]}>
+                    Ask questions about your transcripts or get help with actions
+                  </Text>
+                </View>
+              ) : (
+                chatMessages.map(message => (
+                  <View
+                    key={message.id}
+                    style={[
+                      styles.messageContainer,
+                      message.role === 'user' ? styles.userMessage : styles.assistantMessage,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.messageBubble,
+                        {
+                          backgroundColor: message.role === 'user' ? colors.primary : colors.surface,
+                          borderColor: colors.border,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.messageText,
+                          {
+                            color: message.role === 'user' ? '#ffffff' : colors.text,
+                          },
+                        ]}
+                      >
+                        {message.content}
                       </Text>
-                    )}
-                  </YStack>
-                </Card>
-              ))
-            )}
-          </YStack>
+                      <Text
+                        style={[
+                          styles.messageTime,
+                          {
+                            color: message.role === 'user' ? 'rgba(255,255,255,0.7)' : colors.textSecondary,
+                          },
+                        ]}
+                      >
+                        {new Date(message.timestamp).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </Text>
+                    </View>
+                  </View>
+                ))
+              )}
+            </ScrollView>
+            
+            <ChatInput
+              onSendMessage={handleSendMessage}
+              loading={chatLoading}
+              placeholder="Ask about your transcripts or actions..."
+              contextInfo={
+                selectedTranscript ? {
+                  transcriptTitle: selectedTranscript.title,
+                  actionCount: selectedTranscript.actionCount,
+                } : undefined
+              }
+            />
+          </KeyboardAvoidingView>
+        );
 
-          {/* MCPs */}
-          <YStack space="$3">
-            <Text fontSize="$5" fontWeight="600" color="$color">
-              Available MCPs
-            </Text>
-            {mcps.length === 0 ? (
-              <Card backgroundColor={surfaceColor} padding="$4">
-                <Text fontSize="$4" color="$color11" textAlign="center">
-                  No MCPs available.
-                </Text>
-              </Card>
-            ) : (
-              mcps.map((item) => (
-                <Card key={item.name} backgroundColor={surfaceColor} padding="$4">
-                  <XStack justifyContent="space-between" alignItems="center">
-                    <Text fontSize="$4" fontWeight="600" color="$color">
-                      {item.name}
-                    </Text>
-                    <LoadingButton
-                      title="Install"
-                      onPress={() => handleInstallMCP(item.name)}
-                      isLoading={isLoading(`installMCP-${item.name}`)}
-                      style={{
-                        backgroundColor: activeTheme === 'dark' ? '#0A84FF' : '#007AFF',
-                        padding: 8,
-                        borderRadius: 5,
-                      }}
-                      textStyle={{
-                        color: 'white',
-                        fontSize: 12,
-                        fontWeight: 'bold',
-                      }}
-                    />
-                  </XStack>
-                </Card>
-              ))
-            )}
-          </YStack>
-        </YStack>
-      </ScrollView>
+      default:
+        return null;
+    }
+  };
 
-      <LoadingOverlay 
-        visible={isLoading('loadMCPs') || isLoading('uploadAudio')} 
-        message={isLoading('loadMCPs') ? 'Loading MCPs...' : 'Uploading audio...'} 
-      />
-    </SafeAreaView>
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingTop: 16,
+      paddingBottom: 12,
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    headerActions: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    headerButton: {
+      padding: 8,
+      borderRadius: 8,
+      backgroundColor: colors.background,
+    },
+    tabBar: {
+      flexDirection: 'row',
+      backgroundColor: colors.surface,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: 16,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    activeTab: {
+      borderBottomWidth: 2,
+      borderBottomColor: colors.primary,
+    },
+    tabText: {
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    activeTabText: {
+      color: colors.primary,
+    },
+    inactiveTabText: {
+      color: colors.textSecondary,
+    },
+    tabContent: {
+      flex: 1,
+    },
+    processorContainer: {
+      padding: 16,
+    },
+    chatContainer: {
+      flex: 1,
+    },
+    chatMessages: {
+      flex: 1,
+      paddingHorizontal: 16,
+    },
+    chatMessagesContent: {
+      paddingVertical: 16,
+      flexGrow: 1,
+    },
+    chatEmptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 40,
+    },
+    chatEmptyTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      marginTop: 16,
+      marginBottom: 8,
+    },
+    chatEmptyDescription: {
+      fontSize: 14,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    messageContainer: {
+      marginBottom: 12,
+    },
+    userMessage: {
+      alignItems: 'flex-end',
+    },
+    assistantMessage: {
+      alignItems: 'flex-start',
+    },
+    messageBubble: {
+      maxWidth: '80%',
+      padding: 12,
+      borderRadius: 16,
+      borderWidth: 1,
+    },
+    messageText: {
+      fontSize: 14,
+      lineHeight: 20,
+      marginBottom: 4,
+    },
+    messageTime: {
+      fontSize: 10,
+      alignSelf: 'flex-end',
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      backgroundColor: colors.background,
+      borderRadius: 12,
+      margin: 20,
+      maxHeight: '80%',
+      width: '90%',
+    },
+    modalHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    modalTitle: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    modalCloseButton: {
+      padding: 8,
+    },
+    modalBody: {
+      flex: 1,
+      padding: 16,
+    },
+  });
+
+  return (
+    <View style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Chat</Text>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => console.log('Search')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="search-outline" size={20} color={colors.text} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => console.log('Settings')}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="settings-outline" size={20} color={colors.text} />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Tab Bar */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'processor' && styles.activeTab]}
+          onPress={() => setActiveTab('processor')}
+          activeOpacity={0.7}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'processor' ? styles.activeTabText : styles.inactiveTabText,
+            ]}
+          >
+            Text Processor
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'transcripts' && styles.activeTab]}
+          onPress={() => setActiveTab('transcripts')}
+          activeOpacity={0.7}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'transcripts' ? styles.activeTabText : styles.inactiveTabText,
+            ]}
+          >
+            Transcripts
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'chat' && styles.activeTab]}
+          onPress={() => setActiveTab('chat')}
+          activeOpacity={0.7}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'chat' ? styles.activeTabText : styles.inactiveTabText,
+            ]}
+          >
+            AI Chat
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Tab Content */}
+      {renderTabContent()}
+
+      {/* Detail Modal */}
+      <Modal
+        visible={showDetailModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowDetailModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Transcript Details</Text>
+              <TouchableOpacity
+                style={styles.modalCloseButton}
+                onPress={() => setShowDetailModal(false)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="close-outline" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalBody}>
+              {selectedTranscript && (
+                <TranscriptCard
+                  transcript={selectedTranscript}
+                  expanded={true}
+                  showActions={true}
+                  onActionPress={(actionId) => {
+                    console.log('Action pressed:', actionId);
+                    setShowDetailModal(false);
+                  }}
+                />
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }

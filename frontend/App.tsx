@@ -5,10 +5,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
 import { supabase } from './src/config/supabase';
 import { User } from '@supabase/supabase-js';
 import WelcomeScreen from './src/components/auth/WelcomeScreen';
-import EnhancedSignIn from './src/components/auth/EnhancedSignIn';
+import SignInScreen from './src/components/auth/SignInScreen';
 import TranscriptUpload from './src/components/TranscriptUpload';
 import TranscriptViewer from './src/components/TranscriptViewer';
 import VoiceRecorder from './src/components/VoiceRecorder';
@@ -22,8 +23,30 @@ import { notificationService, ActivityEvent } from './src/services/notificationS
 import NotificationPanel from './src/components/NotificationPanel';
 import NotificationBadge from './src/components/NotificationBadge';
 import LiveActivityFeed from './src/components/LiveActivityFeed';
+import CalendarTab from './src/components/tabs/CalendarTab';
 
 const Tab = createBottomTabNavigator();
+
+// Linking configuration for URL routing
+const linking = {
+  prefixes: ['https://ccopinai.com', 'ccopinai://'],
+  config: {
+    screens: {
+      MainTabs: {
+        screens: {
+          Dashboard: 'dashboard',
+          Chat: 'chat',
+          Calendar: 'calendar',
+          Live: 'live',
+          Analytics: 'analytics',
+          Settings: 'settings',
+        },
+      },
+      Welcome: 'welcome',
+      SignIn: 'signin',
+    },
+  },
+};
 
 // Loading screen component
 function LoadingScreen() {
@@ -558,6 +581,8 @@ function MainTabs() {
             iconName = focused ? 'apps' : 'apps-outline';
           } else if (route.name === 'Chat') {
             iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
+          } else if (route.name === 'Calendar') {
+            iconName = focused ? 'calendar' : 'calendar-outline';
           } else if (route.name === 'Live') {
             iconName = focused ? 'pulse' : 'pulse-outline';
           } else if (route.name === 'Analytics') {
@@ -599,6 +624,7 @@ function MainTabs() {
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Chat" component={ChatScreen} />
+      <Tab.Screen name="Calendar" component={CalendarTab} />
       <Tab.Screen name="Live" component={LiveScreen} />
       <Tab.Screen name="Analytics" component={AnalyticsDashboard} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
@@ -650,12 +676,12 @@ function AppContent() {
   
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         {user ? (
           <MainTabs />
         ) : showSignIn ? (
           <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <EnhancedSignIn navigation={null} />
+            <SignInScreen onSuccess={() => setShowSignIn(false)} />
           </View>
         ) : (
           <View style={{ flex: 1, backgroundColor: colors.background }}>

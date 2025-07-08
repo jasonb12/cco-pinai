@@ -22,7 +22,9 @@
       "Bash(say:*)",
       "Bash(node:*)",
       "WebFetch(domain:github.com)",
-      "Bash(export PGPASSWORD=\"ILoveBacon2Much\")"
+      "Bash(export PGPASSWORD=\"ILoveBacon2Much\")",
+      "Bash(./scripts/start-frontend.sh:*)",
+      "Bash(open http://localhost:8081/settings)"
     ],
     "deny": []
   }

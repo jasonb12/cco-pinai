@@ -4,350 +4,421 @@
  */
 import React, { useState } from 'react';
 import {
-  Card,
-  XStack,
-  YStack,
-  Text,
-  Button,
-  Badge,
   View,
-  Progress,
-} from '@tamagui/core';
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  PanResponder,
+  Dimensions,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
-import Animated, {
-  useAnimatedGestureHandler,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  runOnJS,
-  interpolateColor,
-} from 'react-native-reanimated';
+import { useThemeColors } from '../../contexts/ThemeContext';
+import { MCPAction, ActionType, Priority } from '../../types/actions';
 
-import { PendingAction } from '../../stores/notifStore';
-import { useThemeStore } from '../../stores/themeStore';
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.3;
 
 interface ApprovalCardProps {
-  action: PendingAction;
+  action: MCPAction;
   onPress: () => void;
   onApprove: () => void;
   onDeny: () => void;
 }
 
-const AnimatedCard = Animated.createAnimatedComponent(Card);
+export default function ApprovalCard({ action, onPress, onApprove, onDeny }: ApprovalCardProps) {
+  const colors = useThemeColors();
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  
+  const translateX = new Animated.Value(0);
+  const scale = new Animated.Value(1);
+  const opacity = new Animated.Value(1);
 
-export default function ApprovalCard({
-  action,
-  onPress,
-  onApprove,
-  onDeny,
-}: ApprovalCardProps) {
-  const { activeTheme } = useThemeStore();
-  const [isExpanded, setIsExpanded] = useState(false);
-  
-  const translateX = useSharedValue(0);
-  const opacity = useSharedValue(1);
-  
-  const SWIPE_THRESHOLD = 80;
-  
-  const gestureHandler = useAnimatedGestureHandler({
-    onStart: (_, context) => {
-      context.startX = translateX.value;
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gestureState) => {
+      return Math.abs(gestureState.dx) > 10 && Math.abs(gestureState.dy) < 50;
     },
-    onActive: (event, context) => {
-      translateX.value = context.startX + event.translationX;
+    onPanResponderGrant: () => {
+      Animated.spring(scale, {
+        toValue: 0.95,
+        useNativeDriver: true,
+      }).start();
     },
-    onEnd: (event) => {
-      const shouldApprove = translateX.value > SWIPE_THRESHOLD;
-      const shouldDeny = translateX.value < -SWIPE_THRESHOLD;
+    onPanResponderMove: (_, gestureState) => {
+      translateX.setValue(gestureState.dx);
       
-      if (shouldApprove) {
-        translateX.value = withSpring(300);
-        opacity.value = withSpring(0);
-        runOnJS(onApprove)();
-      } else if (shouldDeny) {
-        translateX.value = withSpring(-300);
-        opacity.value = withSpring(0);
-        runOnJS(onDeny)();
+      // Update swipe direction
+      if (gestureState.dx > 50) {
+        setSwipeDirection('right'); // Approve
+      } else if (gestureState.dx < -50) {
+        setSwipeDirection('left'); // Deny
       } else {
-        translateX.value = withSpring(0);
+        setSwipeDirection(null);
+      }
+    },
+    onPanResponderRelease: (_, gestureState) => {
+      const { dx } = gestureState;
+      
+      Animated.spring(scale, {
+        toValue: 1,
+        useNativeDriver: true,
+      }).start();
+
+      if (dx > SWIPE_THRESHOLD) {
+        // Swipe right - Approve
+        Animated.parallel([
+          Animated.timing(translateX, {
+            toValue: SCREEN_WIDTH,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          onApprove();
+        });
+      } else if (dx < -SWIPE_THRESHOLD) {
+        // Swipe left - Deny
+        Animated.parallel([
+          Animated.timing(translateX, {
+            toValue: -SCREEN_WIDTH,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacity, {
+            toValue: 0,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          onDeny();
+        });
+      } else {
+        // Snap back
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+        setSwipeDirection(null);
       }
     },
   });
-  
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }],
-    opacity: opacity.value,
-  }));
-  
-  const backgroundStyle = useAnimatedStyle(() => {
-    const approveColor = activeTheme === 'dark' ? '#30D158' : '#34C759';
-    const denyColor = activeTheme === 'dark' ? '#FF453A' : '#FF3B30';
-    const neutralColor = activeTheme === 'dark' ? '#1c1c1e' : '#f8f9fa';
-    
-    const backgroundColor = interpolateColor(
-      translateX.value,
-      [-SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD],
-      [denyColor, neutralColor, approveColor]
-    );
-    
-    return { backgroundColor };
-  });
-  
-  const getToolIcon = (toolType: string) => {
-    switch (toolType) {
-      case 'calendar':
-        return 'calendar-outline';
-      case 'email':
-        return 'mail-outline';
-      case 'task':
-        return 'checkbox-outline';
-      case 'contact':
-        return 'person-outline';
-      case 'reminder':
-        return 'alarm-outline';
-      default:
-        return 'build-outline';
+
+  const getActionTypeIcon = (actionType: ActionType) => {
+    switch (actionType) {
+      case ActionType.SINGLE_EVENT: return 'flash-outline';
+      case ActionType.SCHEDULED_EVENT: return 'calendar-outline';
+      case ActionType.RECURRING_EVENT: return 'repeat-outline';
+      case ActionType.TASK: return 'checkmark-circle-outline';
+      case ActionType.EMAIL: return 'mail-outline';
+      case ActionType.CONTACT: return 'person-outline';
+      case ActionType.REMINDER: return 'alarm-outline';
+      case ActionType.CALL: return 'call-outline';
+      case ActionType.DOCUMENT: return 'document-outline';
+      default: return 'cog-outline';
     }
   };
-  
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return activeTheme === 'dark' ? '#FF9F0A' : '#FF9500';
-      case 'approved':
-        return activeTheme === 'dark' ? '#30D158' : '#34C759';
-      case 'denied':
-        return activeTheme === 'dark' ? '#FF453A' : '#FF3B30';
-      default:
-        return activeTheme === 'dark' ? '#8e8e93' : '#6c757d';
+
+  const getActionTypeColor = (actionType: ActionType) => {
+    switch (actionType) {
+      case ActionType.SINGLE_EVENT: return '#FF6B6B';
+      case ActionType.SCHEDULED_EVENT: return '#3b82f6';
+      case ActionType.RECURRING_EVENT: return '#8b5cf6';
+      case ActionType.TASK: return '#f59e0b';
+      case ActionType.EMAIL: return '#10b981';
+      case ActionType.CONTACT: return '#06b6d4';
+      case ActionType.REMINDER: return '#ef4444';
+      case ActionType.CALL: return '#84cc16';
+      case ActionType.DOCUMENT: return '#6366f1';
+      default: return colors.textSecondary;
     }
   };
-  
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
+
+  const getPriorityColor = (priority: Priority) => {
+    switch (priority) {
+      case Priority.URGENT: return '#dc2626';
+      case Priority.HIGH: return '#ea580c';
+      case Priority.MEDIUM: return '#d97706';
+      case Priority.LOW: return '#65a30d';
+      default: return colors.textSecondary;
+    }
+  };
+
+  const formatActionType = (actionType: ActionType) => {
+    return actionType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const getTimeAgo = (dateString: string) => {
     const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
+    const created = new Date(dateString);
+    const diffMs = now.getTime() - created.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
     if (diffMins < 1) return 'Just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     return `${diffDays}d ago`;
   };
-  
+
+  const renderActionDetails = () => {
+    switch (action.type) {
+      case ActionType.SCHEDULED_EVENT:
+        const scheduledAction = action as any;
+        return (
+          <Text style={[styles.actionDetails, { color: colors.textSecondary }]}>
+            📅 {scheduledAction.event_details?.start_date} at {scheduledAction.event_details?.start_time}
+          </Text>
+        );
+      
+      case ActionType.RECURRING_EVENT:
+        const recurringAction = action as any;
+        return (
+          <Text style={[styles.actionDetails, { color: colors.textSecondary }]}>
+            🔄 {recurringAction.recurrence?.pattern} • Starts {recurringAction.event_details?.start_date}
+          </Text>
+        );
+      
+      case ActionType.TASK:
+        const taskAction = action as any;
+        return (
+          <Text style={[styles.actionDetails, { color: colors.textSecondary }]}>
+            {taskAction.task_details?.due_date ? `📅 Due: ${taskAction.task_details.due_date}` : '📝 Task'}
+          </Text>
+        );
+      
+      case ActionType.EMAIL:
+        const emailAction = action as any;
+        return (
+          <Text style={[styles.actionDetails, { color: colors.textSecondary }]}>
+            📧 To: {emailAction.email_details?.to?.join(', ') || 'Recipients TBD'}
+          </Text>
+        );
+      
+      default:
+        return null;
+    }
+  };
+
+  const dynamicStyles = StyleSheet.create({
+    container: {
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      marginHorizontal: 16,
+      marginVertical: 8,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+      overflow: 'hidden',
+    },
+    backgroundActions: {
+      position: 'absolute',
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      flexDirection: 'row',
+    },
+    leftAction: {
+      flex: 1,
+      backgroundColor: '#ef4444',
+      justifyContent: 'center',
+      alignItems: 'flex-end',
+      paddingRight: 20,
+    },
+    rightAction: {
+      flex: 1,
+      backgroundColor: '#10b981',
+      justifyContent: 'center',
+      alignItems: 'flex-start',
+      paddingLeft: 20,
+    },
+    actionIcon: {
+      color: '#ffffff',
+    },
+    actionText: {
+      color: '#ffffff',
+      fontSize: 16,
+      fontWeight: '600',
+      marginTop: 4,
+    },
+    cardContent: {
+      backgroundColor: colors.surface,
+      padding: 16,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    typeIcon: {
+      marginRight: 12,
+    },
+    titleContainer: {
+      flex: 1,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    badges: {
+      flexDirection: 'row',
+      gap: 8,
+    },
+    typeBadge: {
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      backgroundColor: colors.border,
+    },
+    typeBadgeText: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: colors.textSecondary,
+    },
+    priorityBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: 6,
+      gap: 4,
+    },
+    priorityText: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#ffffff',
+    },
+    description: {
+      fontSize: 14,
+      color: colors.text,
+      lineHeight: 20,
+      marginBottom: 8,
+    },
+    footer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginTop: 8,
+    },
+    confidence: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    confidenceText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    timeAgo: {
+      fontSize: 12,
+      color: colors.textSecondary,
+    },
+    swipeHint: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+      textAlign: 'center',
+      marginTop: 8,
+      opacity: 0.7,
+    },
+  });
+
+  const styles = StyleSheet.create({
+    actionDetails: {
+      fontSize: 13,
+      marginBottom: 4,
+    },
+  });
+
   return (
-    <View>
-      {/* Swipe background */}
+    <View style={dynamicStyles.container}>
+      {/* Background Actions */}
+      <View style={dynamicStyles.backgroundActions}>
+        <View style={dynamicStyles.leftAction}>
+          <Ionicons name="close-outline" size={24} style={dynamicStyles.actionIcon} />
+          <Text style={dynamicStyles.actionText}>Deny</Text>
+        </View>
+        <View style={dynamicStyles.rightAction}>
+          <Ionicons name="checkmark-outline" size={24} style={dynamicStyles.actionIcon} />
+          <Text style={dynamicStyles.actionText}>Approve</Text>
+        </View>
+      </View>
+
+      {/* Card Content */}
       <Animated.View
         style={[
+          dynamicStyles.cardContent,
           {
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            borderRadius: 12,
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexDirection: 'row',
+            transform: [
+              { translateX },
+              { scale },
+            ],
+            opacity,
           },
-          backgroundStyle,
         ]}
+        {...panResponder.panHandlers}
       >
-        {/* Approve background */}
-        <View
-          position="absolute"
-          right="$4"
-          alignItems="center"
-          gap="$1"
-        >
-          <Ionicons name="checkmark-circle" size={24} color="white" />
-          <Text color="white" fontSize="$2" fontWeight="600">
-            Approve
+        <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+          <View style={dynamicStyles.header}>
+            <Ionicons
+              name={getActionTypeIcon(action.type)}
+              size={20}
+              color={getActionTypeColor(action.type)}
+              style={dynamicStyles.typeIcon}
+            />
+            <View style={dynamicStyles.titleContainer}>
+              <Text style={dynamicStyles.title}>{action.title}</Text>
+              <Text style={dynamicStyles.subtitle}>{formatActionType(action.type)}</Text>
+            </View>
+            <View style={dynamicStyles.badges}>
+              <View style={[dynamicStyles.priorityBadge, { backgroundColor: getPriorityColor(action.priority) }]}>
+                <Ionicons name="flag-outline" size={12} color="#ffffff" />
+                <Text style={dynamicStyles.priorityText}>{action.priority}</Text>
+              </View>
+            </View>
+          </View>
+
+          <Text style={dynamicStyles.description} numberOfLines={2}>
+            {action.description}
           </Text>
-        </View>
-        
-        {/* Deny background */}
-        <View
-          position="absolute"
-          left="$4"
-          alignItems="center"
-          gap="$1"
-        >
-          <Ionicons name="close-circle" size={24} color="white" />
-          <Text color="white" fontSize="$2" fontWeight="600">
-            Deny
-          </Text>
-        </View>
-      </Animated.View>
-      
-      {/* Main card */}
-      <PanGestureHandler onGestureEvent={gestureHandler}>
-        <AnimatedCard
-          style={cardStyle}
-          elevate
-          backgroundColor={activeTheme === 'dark' ? '#1c1c1e' : '#ffffff'}
-          borderColor={activeTheme === 'dark' ? '#38383a' : '#dee2e6'}
-          borderWidth={1}
-          borderRadius="$4"
-          padding="$4"
-          pressStyle={{ scale: 0.98 }}
-          onPress={() => setIsExpanded(!isExpanded)}
-        >
-          <YStack gap="$3">
-            {/* Header */}
-            <XStack alignItems="center" justifyContent="space-between">
-              <XStack alignItems="center" gap="$3" flex={1}>
-                <View
-                  backgroundColor={`$${action.tool_type}3`}
-                  padding="$2"
-                  borderRadius="$3"
-                >
-                  <Ionicons
-                    name={getToolIcon(action.tool_type) as any}
-                    size={20}
-                    color={getStatusColor(action.status)}
-                  />
-                </View>
-                
-                <YStack flex={1} gap="$1">
-                  <Text
-                    fontSize="$4"
-                    fontWeight="600"
-                    color="$color"
-                    numberOfLines={1}
-                  >
-                    {action.title}
-                  </Text>
-                  
-                  <XStack alignItems="center" gap="$2">
-                    <Text
-                      fontSize="$2"
-                      color="$color11"
-                      textTransform="capitalize"
-                    >
-                      {action.tool_type}
-                    </Text>
-                    <Text fontSize="$2" color="$color11">
-                      •
-                    </Text>
-                    <Text fontSize="$2" color="$color11">
-                      {formatTimeAgo(action.created_at)}
-                    </Text>
-                  </XStack>
-                </YStack>
-              </XStack>
-              
-              <XStack alignItems="center" gap="$2">
-                <Badge
-                  backgroundColor={getStatusColor(action.status)}
-                  color="white"
-                  size="$1"
-                  textTransform="capitalize"
-                >
-                  {action.status}
-                </Badge>
-                
-                <Ionicons
-                  name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                  size={16}
-                  color={activeTheme === 'dark' ? '#8e8e93' : '#6c757d'}
-                />
-              </XStack>
-            </XStack>
-            
-            {/* Description */}
-            <Text
-              fontSize="$3"
-              color="$color11"
-              numberOfLines={isExpanded ? undefined : 2}
-            >
-              {action.description}
+
+          {renderActionDetails()}
+
+          <View style={dynamicStyles.footer}>
+            <View style={dynamicStyles.confidence}>
+              <Ionicons name="analytics-outline" size={14} color={colors.textSecondary} />
+              <Text style={dynamicStyles.confidenceText}>
+                {(action.confidence * 100).toFixed(0)}% confidence
+              </Text>
+            </View>
+            <Text style={dynamicStyles.timeAgo}>
+              {getTimeAgo(action.created_at)}
             </Text>
-            
-            {/* Confidence Score */}
-            <XStack alignItems="center" gap="$2">
-              <Text fontSize="$2" color="$color11">
-                Confidence:
-              </Text>
-              <Progress
-                value={action.confidence * 100}
-                max={100}
-                flex={1}
-                backgroundColor={activeTheme === 'dark' ? '#2c2c2e' : '#e9ecef'}
-              >
-                <Progress.Indicator
-                  animation="quick"
-                  backgroundColor={
-                    action.confidence > 0.8
-                      ? '$green10'
-                      : action.confidence > 0.6
-                      ? '$yellow10'
-                      : '$red10'
-                  }
-                />
-              </Progress>
-              <Text fontSize="$2" color="$color11" minWidth={40}>
-                {Math.round(action.confidence * 100)}%
-              </Text>
-            </XStack>
-            
-            {/* Expanded Content */}
-            {isExpanded && (
-              <YStack gap="$3" marginTop="$2">
-                {/* Reasoning */}
-                {action.reasoning && (
-                  <YStack gap="$1">
-                    <Text fontSize="$3" fontWeight="500" color="$color">
-                      AI Reasoning:
-                    </Text>
-                    <Text fontSize="$3" color="$color11">
-                      {action.reasoning}
-                    </Text>
-                  </YStack>
-                )}
-                
-                {/* Action Buttons */}
-                {action.status === 'pending' && (
-                  <XStack gap="$3" marginTop="$2">
-                    <Button
-                      flex={1}
-                      theme="red"
-                      variant="outlined"
-                      onPress={onDeny}
-                      icon={<Ionicons name="close" size={16} />}
-                    >
-                      Deny
-                    </Button>
-                    
-                    <Button
-                      flex={1}
-                      theme="green"
-                      onPress={onApprove}
-                      icon={<Ionicons name="checkmark" size={16} />}
-                    >
-                      Approve
-                    </Button>
-                  </XStack>
-                )}
-                
-                {/* Detail Button */}
-                <Button
-                  variant="outlined"
-                  size="$3"
-                  onPress={onPress}
-                  icon={<Ionicons name="information-circle-outline" size={16} />}
-                >
-                  View Details
-                </Button>
-              </YStack>
-            )}
-          </YStack>
-        </AnimatedCard>
-      </PanGestureHandler>
+          </View>
+
+          {swipeDirection && (
+            <Text style={[
+              dynamicStyles.swipeHint,
+              { color: swipeDirection === 'right' ? '#10b981' : '#ef4444' }
+            ]}>
+              {swipeDirection === 'right' ? '👉 Release to approve' : '👈 Release to deny'}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </Animated.View>
     </View>
   );
 }

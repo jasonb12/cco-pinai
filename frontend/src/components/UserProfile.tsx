@@ -140,26 +140,88 @@ export default function UserProfile({ onClose }: UserProfileProps) {
 
     try {
       const user = authService.getCurrentUser();
-      if (!user) return;
+      if (!user) {
+        Alert.alert('Error', 'Please sign in to upload an avatar');
+        return;
+      }
+
+      // Check if we can reach the backend first
+      let backendAvailable = false;
+      try {
+        const healthResponse = await fetch('http://localhost:8000/health', {
+          method: 'GET',
+          timeout: 5000,
+        } as RequestInit);
+        backendAvailable = healthResponse.ok;
+      } catch (error) {
+        console.log('Backend health check failed:', error);
+      }
+
+      if (!backendAvailable) {
+        // Fallback to direct Supabase upload without backend processing
+        console.log('Backend not available, using direct Supabase upload');
+      }
 
       // Create a unique filename
-      const fileExt = uri.split('.').pop();
+      const fileExt = uri.split('.').pop() || 'jpg';
       const fileName = `${user.id}_${Date.now()}.${fileExt}`;
 
-      // Convert URI to blob for upload
-      const response = await fetch(uri);
-      const blob = await response.blob();
+      // Convert URI to blob for upload with retry logic
+      let blob: Blob;
+      let retryCount = 0;
+      const maxRetries = 3;
 
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, blob, {
-          contentType: 'image/jpeg',
-          upsert: true,
-        });
+      while (retryCount < maxRetries) {
+        try {
+          const response = await fetch(uri);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch image: ${response.status}`);
+          }
+          blob = await response.blob();
+          break;
+        } catch (error) {
+          retryCount++;
+          console.log(`Retry ${retryCount} for image fetch:`, error);
+          
+          if (retryCount >= maxRetries) {
+            throw new Error('Failed to process image after multiple attempts');
+          }
+          
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        }
+      }
 
-      if (error) {
-        throw error;
+      // Upload to Supabase Storage with retry logic
+      let uploadResult;
+      retryCount = 0;
+      
+      while (retryCount < maxRetries) {
+        try {
+          const { data, error } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, blob!, {
+              contentType: 'image/jpeg',
+              upsert: true,
+            });
+
+          if (error) {
+            throw error;
+          }
+
+          uploadResult = data;
+          break;
+        } catch (error: any) {
+          retryCount++;
+          console.log(`Upload retry ${retryCount}:`, error);
+          
+          if (retryCount >= maxRetries) {
+            throw new Error(`Upload failed after ${maxRetries} attempts: ${error.message}`);
+          }
+          
+          // Wait before retry with exponential backoff
+          await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount - 1)));
+        }
       }
 
       // Get public URL
@@ -167,16 +229,64 @@ export default function UserProfile({ onClose }: UserProfileProps) {
         .from('avatars')
         .getPublicUrl(fileName);
 
+      if (!urlData.publicUrl) {
+        throw new Error('Failed to get public URL for uploaded avatar');
+      }
+
       // Update user profile with avatar URL
       await authService.updateProfile({
         avatar_url: urlData.publicUrl,
       });
 
-      Alert.alert('Success', 'Avatar updated successfully');
-      await loadUserProfile();
+      Alert.alert(
+        'Success',
+        'Avatar updated successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Refresh profile to show new avatar
+              loadUserProfile();
+            }
+          }
+        ]
+      );
+
     } catch (error: any) {
       console.error('Error uploading avatar:', error);
-      Alert.alert('Error', 'Failed to upload avatar');
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Failed to upload avatar';
+      
+      if (error.message.includes('fetch')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message.includes('size')) {
+        errorMessage = 'Image is too large. Please choose a smaller image.';
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Upload timed out. Please try again.';
+      } else if (error.message.includes('storage')) {
+        errorMessage = 'Storage error. Please try again later.';
+      } else if (error.message.includes('network') || error.message.includes('connection')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      }
+
+      Alert.alert(
+        'Upload Failed',
+        errorMessage,
+        [
+          {
+            text: 'Try Again',
+            onPress: () => {
+              // Retry with the same image
+              uploadAvatar(uri);
+            }
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          }
+        ]
+      );
     } finally {
       setIsLoading(false);
     }
@@ -324,6 +434,11 @@ export default function UserProfile({ onClose }: UserProfileProps) {
       color: colors.text,
       marginBottom: 8,
     },
+    inputWithIcon: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      position: 'relative',
+    },
     input: {
       backgroundColor: colors.surface,
       borderRadius: 12,
@@ -333,22 +448,54 @@ export default function UserProfile({ onClose }: UserProfileProps) {
       paddingVertical: 12,
       fontSize: 16,
       color: colors.text,
+      flex: 1,
+      paddingRight: 40,
+    },
+    editToggleIcon: {
+      position: 'absolute',
+      right: 12,
+      padding: 4,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cancelIcon: {
+      position: 'absolute',
+      right: 50,
+      padding: 4,
+      borderRadius: 12,
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    lockIcon: {
+      position: 'absolute',
+      right: 12,
+      padding: 4,
     },
     inputDisabled: {
       backgroundColor: colors.background,
       color: colors.textSecondary,
     },
     settingItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
       paddingVertical: 12,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
     },
+    settingContent: {
+      flex: 1,
+    },
+    settingHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+    },
     settingText: {
       fontSize: 16,
       color: colors.text,
+      flex: 1,
     },
     settingDescription: {
       fontSize: 14,
@@ -439,32 +586,6 @@ export default function UserProfile({ onClose }: UserProfileProps) {
       <View style={dynamicStyles.header}>
         <Text style={dynamicStyles.headerTitle}>Profile</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {isEditing ? (
-            <>
-              <TouchableOpacity
-                style={dynamicStyles.headerButton}
-                onPress={() => setIsEditing(false)}
-              >
-                <Text style={dynamicStyles.headerButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={dynamicStyles.headerButton}
-                onPress={handleSaveProfile}
-                disabled={isLoading}
-              >
-                <Text style={[dynamicStyles.headerButtonText, { fontWeight: '600' }]}>
-                  Save
-                </Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <TouchableOpacity
-              style={dynamicStyles.headerButton}
-              onPress={() => setIsEditing(true)}
-            >
-              <Text style={dynamicStyles.headerButtonText}>Edit</Text>
-            </TouchableOpacity>
-          )}
           {onClose && (
             <TouchableOpacity style={dynamicStyles.headerButton} onPress={onClose}>
               <Ionicons name="close" size={24} color={colors.text} />
@@ -503,24 +624,67 @@ export default function UserProfile({ onClose }: UserProfileProps) {
           
           <View style={dynamicStyles.inputContainer}>
             <Text style={dynamicStyles.inputLabel}>Full Name</Text>
-            <TextInput
-              style={[dynamicStyles.input, !isEditing && dynamicStyles.inputDisabled]}
-              value={name}
-              onChangeText={setName}
-              placeholder="Enter your full name"
-              editable={isEditing}
-              placeholderTextColor={colors.textTertiary}
-            />
+            <View style={dynamicStyles.inputWithIcon}>
+              <TextInput
+                style={[
+                  dynamicStyles.input, 
+                  !isEditing && dynamicStyles.inputDisabled,
+                  isEditing && { paddingRight: 80 } // Extra padding for both icons
+                ]}
+                value={name}
+                onChangeText={setName}
+                placeholder="Enter your full name"
+                editable={isEditing}
+                placeholderTextColor={colors.textTertiary}
+              />
+              <TouchableOpacity 
+                style={dynamicStyles.editToggleIcon}
+                onPress={() => {
+                  if (isEditing) {
+                    handleSaveProfile();
+                  } else {
+                    setIsEditing(true);
+                  }
+                }}
+                disabled={isLoading}
+              >
+                <Ionicons 
+                  name={isEditing ? "checkmark" : "pencil"} 
+                  size={16} 
+                  color={isEditing ? colors.primary : colors.textSecondary} 
+                />
+              </TouchableOpacity>
+              {isEditing && (
+                <TouchableOpacity 
+                  style={dynamicStyles.cancelIcon}
+                  onPress={() => {
+                    setIsEditing(false);
+                    setName(user?.name || ''); // Reset to original value
+                  }}
+                >
+                  <Ionicons 
+                    name="close" 
+                    size={16} 
+                    color={colors.textSecondary} 
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           <View style={dynamicStyles.inputContainer}>
             <Text style={dynamicStyles.inputLabel}>Email</Text>
-            <TextInput
-              style={[dynamicStyles.input, dynamicStyles.inputDisabled]}
-              value={email}
-              editable={false}
-              placeholderTextColor={colors.textTertiary}
-            />
+            <View style={dynamicStyles.inputWithIcon}>
+              <TextInput
+                style={[dynamicStyles.input, dynamicStyles.inputDisabled]}
+                value={email}
+                editable={false}
+                placeholderTextColor={colors.textTertiary}
+              />
+              <View style={dynamicStyles.lockIcon}>
+                <Ionicons name="lock-closed" size={16} color={colors.textTertiary} />
+              </View>
+            </View>
             {user.provider && (
               <View style={dynamicStyles.providerBadge}>
                 <Text style={dynamicStyles.providerBadgeText}>
@@ -585,33 +749,37 @@ export default function UserProfile({ onClose }: UserProfileProps) {
           <Text style={dynamicStyles.sectionTitle}>Notifications</Text>
           
           <View style={dynamicStyles.settingItem}>
-            <View>
-              <Text style={dynamicStyles.settingText}>Email Notifications</Text>
+            <View style={dynamicStyles.settingContent}>
+              <View style={dynamicStyles.settingHeader}>
+                <Text style={dynamicStyles.settingText}>Email Notifications</Text>
+                <Switch
+                  value={emailNotifications}
+                  onValueChange={setEmailNotifications}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={colors.background}
+                />
+              </View>
               <Text style={dynamicStyles.settingDescription}>
                 Receive updates about your transcripts via email
               </Text>
             </View>
-            <Switch
-              value={emailNotifications}
-              onValueChange={setEmailNotifications}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.background}
-            />
           </View>
 
           <View style={dynamicStyles.settingItem}>
-            <View>
-              <Text style={dynamicStyles.settingText}>Push Notifications</Text>
+            <View style={dynamicStyles.settingContent}>
+              <View style={dynamicStyles.settingHeader}>
+                <Text style={dynamicStyles.settingText}>Push Notifications</Text>
+                <Switch
+                  value={pushNotifications}
+                  onValueChange={setPushNotifications}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={colors.background}
+                />
+              </View>
               <Text style={dynamicStyles.settingDescription}>
                 Get notified when AI analysis is complete
               </Text>
             </View>
-            <Switch
-              value={pushNotifications}
-              onValueChange={setPushNotifications}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.background}
-            />
           </View>
         </View>
 
@@ -620,18 +788,20 @@ export default function UserProfile({ onClose }: UserProfileProps) {
           <Text style={dynamicStyles.sectionTitle}>Privacy</Text>
           
           <View style={dynamicStyles.settingItem}>
-            <View>
-              <Text style={dynamicStyles.settingText}>Analytics</Text>
+            <View style={dynamicStyles.settingContent}>
+              <View style={dynamicStyles.settingHeader}>
+                <Text style={dynamicStyles.settingText}>Analytics</Text>
+                <Switch
+                  value={analyticsEnabled}
+                  onValueChange={setAnalyticsEnabled}
+                  trackColor={{ false: colors.border, true: colors.primary }}
+                  thumbColor={colors.background}
+                />
+              </View>
               <Text style={dynamicStyles.settingDescription}>
                 Help improve CCOPINAI with usage analytics
               </Text>
             </View>
-            <Switch
-              value={analyticsEnabled}
-              onValueChange={setAnalyticsEnabled}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.background}
-            />
           </View>
         </View>
 

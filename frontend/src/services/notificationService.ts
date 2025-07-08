@@ -2,7 +2,7 @@ import { authService } from './authService';
 
 export interface Notification {
   id: string;
-  type: 'transcript_uploaded' | 'transcript_processed' | 'ai_analysis_complete' | 'action_item_created' | 'user_joined' | 'comment_added' | 'system_update';
+  type: 'connection_error' | 'websocket_offline' | 'backend_unavailable' | 'transcript_uploaded' | 'transcript_processed' | 'ai_analysis_complete' | 'action_item_created' | 'user_joined' | 'comment_added' | 'system_update';
   title: string;
   message: string;
   data?: any;
@@ -28,6 +28,16 @@ export interface ActivityEvent {
   workspaceId?: string;
 }
 
+export interface ConnectionStatus {
+  isConnected: boolean;
+  isReconnecting: boolean;
+  lastError?: string;
+  lastConnectedAt?: Date;
+  reconnectAttempts: number;
+  maxReconnectAttempts: number;
+  backendAvailable: boolean;
+}
+
 class NotificationService {
   private static instance: NotificationService;
   private ws: WebSocket | null = null;
@@ -35,14 +45,20 @@ class NotificationService {
   private activityFeed: ActivityEvent[] = [];
   private listeners: ((notifications: Notification[]) => void)[] = [];
   private activityListeners: ((activities: ActivityEvent[]) => void)[] = [];
-  private connectionListeners: ((connected: boolean) => void)[] = [];
-  private isConnected = false;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
+  private connectionListeners: ((status: ConnectionStatus) => void)[] = [];
+  private connectionStatus: ConnectionStatus = {
+    isConnected: false,
+    isReconnecting: false,
+    reconnectAttempts: 0,
+    maxReconnectAttempts: 5,
+    backendAvailable: false,
+  };
+  private reconnectTimeout: NodeJS.Timeout | null = null;
   private reconnectDelay = 1000;
+  private backendHealthChecked = false;
 
   private constructor() {
-    this.initializeWebSocket();
+    this.checkBackendHealth();
   }
 
   public static getInstance(): NotificationService {
@@ -52,7 +68,55 @@ class NotificationService {
     return NotificationService.instance;
   }
 
+  private async checkBackendHealth(): Promise<boolean> {
+    try {
+      const response = await fetch('http://localhost:8000/health', {
+        method: 'GET',
+        timeout: 5000,
+      } as RequestInit);
+      
+      if (response.ok) {
+        this.connectionStatus.backendAvailable = true;
+        this.connectionStatus.lastError = undefined;
+        this.backendHealthChecked = true;
+        this.initializeWebSocket();
+        return true;
+      }
+    } catch (error) {
+      this.connectionStatus.backendAvailable = false;
+      this.connectionStatus.lastError = 'Backend service is not available';
+      this.backendHealthChecked = true;
+      
+      // Show user-friendly notification about backend being offline
+      this.addOfflineNotification();
+      this.notifyConnectionChange();
+      
+      // Retry health check less frequently when backend is down
+      setTimeout(() => this.checkBackendHealth(), 10000);
+      return false;
+    }
+    return false;
+  }
+
+  private addOfflineNotification() {
+    const notification: Notification = {
+      id: `offline_${Date.now()}`,
+      type: 'backend_unavailable',
+      title: 'Real-time Features Offline',
+      message: 'Some features may be limited while we reconnect to the server. Your work is still saved.',
+      timestamp: new Date(),
+      read: false,
+      priority: 'medium',
+    };
+    
+    this.addNotification(notification);
+  }
+
   private async initializeWebSocket() {
+    if (!this.connectionStatus.backendAvailable) {
+      return;
+    }
+
     try {
       // Wait for auth to be ready
       const user = authService.getCurrentUser();
@@ -62,14 +126,23 @@ class NotificationService {
         return;
       }
 
+      this.connectionStatus.isReconnecting = true;
+      this.notifyConnectionChange();
+
       const wsUrl = 'ws://localhost:8000/ws';
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
         console.log('🔌 Notification WebSocket connected');
-        this.isConnected = true;
-        this.reconnectAttempts = 0;
+        this.connectionStatus.isConnected = true;
+        this.connectionStatus.isReconnecting = false;
+        this.connectionStatus.reconnectAttempts = 0;
+        this.connectionStatus.lastConnectedAt = new Date();
+        this.connectionStatus.lastError = undefined;
         this.notifyConnectionChange();
+        
+        // Remove offline notification if it exists
+        this.removeOfflineNotifications();
         
         // Send authentication
         this.sendMessage({
@@ -90,34 +163,63 @@ class NotificationService {
 
       this.ws.onclose = () => {
         console.log('🔌 Notification WebSocket disconnected');
-        this.isConnected = false;
+        this.connectionStatus.isConnected = false;
+        this.connectionStatus.isReconnecting = false;
         this.notifyConnectionChange();
         this.attemptReconnect();
       };
 
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.warn('WebSocket error:', error);
+        this.connectionStatus.lastError = 'WebSocket connection failed';
       };
 
     } catch (error) {
       console.error('Error initializing WebSocket:', error);
+      this.connectionStatus.lastError = 'Failed to initialize WebSocket';
       this.attemptReconnect();
     }
   }
 
   private attemptReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
-      const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1);
+    if (this.connectionStatus.reconnectAttempts < this.connectionStatus.maxReconnectAttempts) {
+      this.connectionStatus.reconnectAttempts++;
+      this.connectionStatus.isReconnecting = true;
+      this.notifyConnectionChange();
       
-      console.log(`🔄 Attempting to reconnect in ${delay}ms (attempt ${this.reconnectAttempts})`);
+      const delay = Math.min(this.reconnectDelay * Math.pow(2, this.connectionStatus.reconnectAttempts - 1), 30000);
       
-      setTimeout(() => {
-        this.initializeWebSocket();
+      console.log(`🔄 Attempting to reconnect in ${delay}ms (attempt ${this.connectionStatus.reconnectAttempts})`);
+      
+      this.reconnectTimeout = setTimeout(() => {
+        this.checkBackendHealth();
       }, delay);
     } else {
-      console.error('❌ Max reconnection attempts reached');
+      console.warn('❌ Max reconnection attempts reached');
+      this.connectionStatus.isReconnecting = false;
+      this.connectionStatus.lastError = 'Maximum reconnection attempts reached';
+      this.notifyConnectionChange();
+      
+      // Add notification about connection failure
+      const notification: Notification = {
+        id: `connection_failed_${Date.now()}`,
+        type: 'connection_error',
+        title: 'Connection Failed',
+        message: 'Unable to connect to real-time services. Some features may be limited.',
+        timestamp: new Date(),
+        read: false,
+        priority: 'low',
+      };
+      
+      this.addNotification(notification);
     }
+  }
+
+  private removeOfflineNotifications() {
+    this.notifications = this.notifications.filter(n => 
+      n.type !== 'backend_unavailable' && n.type !== 'connection_error' && n.type !== 'websocket_offline'
+    );
+    this.notifyListeners();
   }
 
   private sendMessage(message: any) {
@@ -276,7 +378,7 @@ class NotificationService {
   }
 
   private notifyConnectionChange() {
-    this.connectionListeners.forEach(listener => listener(this.isConnected));
+    this.connectionListeners.forEach(listener => listener({...this.connectionStatus}));
   }
 
   private async showPushNotification(notification: Notification) {
@@ -319,6 +421,10 @@ class NotificationService {
     return [...this.activityFeed];
   }
 
+  public getConnectionStatus(): ConnectionStatus {
+    return {...this.connectionStatus};
+  }
+
   public getUnreadCount(): number {
     return this.notifications.filter(n => !n.read).length;
   }
@@ -347,7 +453,19 @@ class NotificationService {
   }
 
   public isConnectedToServer(): boolean {
-    return this.isConnected;
+    return this.connectionStatus.isConnected;
+  }
+
+  public isBackendAvailable(): boolean {
+    return this.connectionStatus.backendAvailable;
+  }
+
+  public retryConnection() {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+    }
+    this.connectionStatus.reconnectAttempts = 0;
+    this.checkBackendHealth();
   }
 
   public onNotificationsChange(listener: (notifications: Notification[]) => void) {
@@ -374,7 +492,7 @@ class NotificationService {
     };
   }
 
-  public onConnectionChange(listener: (connected: boolean) => void) {
+  public onConnectionChange(listener: (status: ConnectionStatus) => void) {
     this.connectionListeners.push(listener);
     
     // Return unsubscribe function
@@ -388,17 +506,19 @@ class NotificationService {
 
   // Send custom notifications
   public sendTranscriptUpload(transcriptId: string, filename: string) {
-    this.sendMessage({
-      type: 'transcript_upload',
-      transcriptId,
-      filename,
-      userId: authService.getCurrentUser()?.id,
-    });
+    if (this.connectionStatus.isConnected) {
+      this.sendMessage({
+        type: 'transcript_upload',
+        transcriptId,
+        filename,
+        userId: authService.getCurrentUser()?.id,
+      });
+    }
   }
 
   public sendUserActivity(activity: Partial<ActivityEvent>) {
     const user = authService.getCurrentUser();
-    if (!user) return;
+    if (!user || !this.connectionStatus.isConnected) return;
 
     this.sendMessage({
       type: 'user_activity',
@@ -411,6 +531,9 @@ class NotificationService {
   }
 
   public disconnect() {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+    }
     if (this.ws) {
       this.ws.close();
       this.ws = null;

@@ -3,30 +3,47 @@
  * Based on PRD-UI.md specifications
  */
 import React from 'react';
-import {
-  View,
-  Text,
-  YStack,
-} from '@tamagui/core';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { useThemeStore } from '../../stores/themeStore';
+import { useThemeColors } from '../../contexts/ThemeContext';
 
 export default function MonitorTab() {
-  const { activeTheme } = useThemeStore();
+  const colors = useThemeColors();
   
-  const backgroundColor = activeTheme === 'dark' ? '#000000' : '#ffffff';
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    content: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 24,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '600',
+      color: colors.text,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    subtitle: {
+      fontSize: 16,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: 8,
+    },
+  });
   
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor }}>
-      <YStack flex={1} alignItems="center" justifyContent="center" padding="$6">
-        <Text fontSize="$6" fontWeight="600" color="$color" textAlign="center">
-          Processing Monitor
-        </Text>
-        <Text fontSize="$4" color="$color11" textAlign="center" marginTop="$2">
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.title}>Processing Monitor</Text>
+        <Text style={styles.subtitle}>
           Real-time pipeline monitoring and stage timeline coming soon...
         </Text>
-      </YStack>
+      </View>
     </SafeAreaView>
   );
 }

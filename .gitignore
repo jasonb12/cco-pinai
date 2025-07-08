@@ -206,3 +206,6 @@ backend/config.py
 
 # Supabase
 .supabase/
+
+# Linked project\
+pinai

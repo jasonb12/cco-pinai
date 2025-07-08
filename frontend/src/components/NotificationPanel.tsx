@@ -379,7 +379,7 @@ export default function NotificationPanel({ visible, onClose }: NotificationPane
           {/* Connection Status */}
           <View style={dynamicStyles.connectionStatus}>
             <Ionicons
-              name={isConnected ? 'wifi' : 'wifi-off'}
+              name={isConnected ? 'wifi' : 'wifi'}
               size={12}
               color="white"
             />

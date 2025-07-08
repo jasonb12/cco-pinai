@@ -197,84 +197,161 @@ async def get_lifelog(lifelog_id: str):
         logger.error(f"Error getting lifelog: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/limitless/lifelogs/by-date")
-async def list_lifelogs_by_date(request: LimitlessDateRequest):
-    """List lifelogs for a specific date"""
+# Add new models for user-specific Limitless requests
+class UserLimitlessRequest(BaseModel):
+    user_id: str
+
+class UserLimitlessDateRequest(BaseModel):
+    user_id: str
+    date: str
+    timezone: Optional[str] = "UTC"
+
+class UserLimitlessRangeRequest(BaseModel):
+    user_id: str
+    start_time: str
+    end_time: str
+    timezone: Optional[str] = "UTC"
+
+# Helper function to get user's Limitless API key
+async def get_user_limitless_api_key(user_id: str) -> Optional[str]:
+    """Get user's Limitless API key from database"""
     try:
-        limitless_service = get_limitless_service()
+        database_service = get_database_service()
+        
+        # This would need to be implemented in the database service
+        # For now, return None and let the existing service handle it
+        return None
+    except Exception as e:
+        logger.error(f"Error getting user API key: {e}")
+        return None
+
+# Update existing Limitless endpoints to work with user-specific API keys
+@app.post("/limitless/user/lifelogs/by-date")
+async def list_user_lifelogs_by_date(request: UserLimitlessDateRequest):
+    """List lifelogs for a specific date for a specific user"""
+    try:
+        # Get user's API key
+        api_key = await get_user_limitless_api_key(request.user_id)
+        if not api_key:
+            raise HTTPException(status_code=400, detail="User has not configured Limitless.ai API key")
+        
+        # Create user-specific service with their API key
+        from src.services.limitless import LimitlessService
+        limitless_service = LimitlessService(api_key=api_key)
+        
         target_date = date.fromisoformat(request.date)
-        lifelogs = await limitless_service.list_lifelogs_by_date(target_date, request.timezone)
-        return {"lifelogs": [log.dict() for log in lifelogs]}
+        result = await limitless_service.list_lifelogs_by_date(target_date, request.timezone or "UTC")
+        
+        await limitless_service.close()
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid date format: {e}")
-    except LimitlessAPIError as e:
-        logger.error(f"Limitless API error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Error listing lifelogs by date: {e}")
+        logger.error(f"Error listing user lifelogs by date: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/limitless/lifelogs/by-range")
-async def list_lifelogs_by_range(request: LimitlessRangeRequest):
-    """List lifelogs within a time range"""
+@app.post("/limitless/user/lifelogs/by-range")
+async def list_user_lifelogs_by_range(request: UserLimitlessRangeRequest):
+    """List lifelogs within a time range for a specific user"""
     try:
-        limitless_service = get_limitless_service()
+        # Get user's API key
+        api_key = await get_user_limitless_api_key(request.user_id)
+        if not api_key:
+            raise HTTPException(status_code=400, detail="User has not configured Limitless.ai API key")
+        
+        # Create user-specific service with their API key
+        from src.services.limitless import LimitlessService
+        limitless_service = LimitlessService(api_key=api_key)
+        
         start_time = datetime.fromisoformat(request.start_time)
         end_time = datetime.fromisoformat(request.end_time)
-        lifelogs = await limitless_service.list_lifelogs_by_range(start_time, end_time, request.timezone)
+        lifelogs = await limitless_service.list_lifelogs_by_range(start_time, end_time, request.timezone or "UTC")
+        
+        await limitless_service.close()
         return {"lifelogs": [log.dict() for log in lifelogs]}
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Invalid datetime format: {e}")
-    except LimitlessAPIError as e:
-        logger.error(f"Limitless API error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Error listing lifelogs by range: {e}")
+        logger.error(f"Error listing user lifelogs by range: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/limitless/lifelogs/recent")
-async def list_recent_lifelogs(limit: int = 10):
-    """List recent lifelogs"""
+@app.post("/limitless/user/lifelogs/recent")
+async def list_user_recent_lifelogs(request: UserLimitlessRequest, limit: int = 10):
+    """List recent lifelogs for a specific user"""
     try:
-        limitless_service = get_limitless_service()
+        # Get user's API key
+        api_key = await get_user_limitless_api_key(request.user_id)
+        if not api_key:
+            raise HTTPException(status_code=400, detail="User has not configured Limitless.ai API key")
+        
+        # Create user-specific service with their API key
+        from src.services.limitless import LimitlessService
+        limitless_service = LimitlessService(api_key=api_key)
+        
         lifelogs = await limitless_service.list_recent_lifelogs(limit)
+        
+        await limitless_service.close()
         return {"lifelogs": [log.dict() for log in lifelogs]}
-    except LimitlessAPIError as e:
-        logger.error(f"Limitless API error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        logger.error(f"Error listing recent lifelogs: {e}")
+        logger.error(f"Error listing user recent lifelogs: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/limitless/sync-to-transcripts")
-async def sync_lifelogs_to_transcripts():
-    """Sync recent Limitless lifelogs to transcript database"""
+@app.post("/limitless/user/test-connection")
+async def test_user_limitless_connection(request: UserLimitlessRequest):
+    """Test Limitless connection for a specific user"""
     try:
-        limitless_service = get_limitless_service()
+        # Get user's API key
+        api_key = await get_user_limitless_api_key(request.user_id)
+        if not api_key:
+            return {"success": False, "message": "No API key configured"}
         
-        # Get recent lifelogs
-        lifelogs = await limitless_service.list_recent_lifelogs(20)
+        # Create user-specific service with their API key
+        from src.services.limitless import LimitlessService
+        limitless_service = LimitlessService(api_key=api_key)
         
-        # Here you would implement the logic to save to your Supabase database
-        # For now, we'll just return the count
-        synced_count = len(lifelogs)
+        # Test by getting recent lifelogs
+        try:
+            lifelogs = await limitless_service.list_recent_lifelogs(1)
+            await limitless_service.close()
+            return {
+                "success": True,
+                "message": f"Successfully connected! Found {len(lifelogs)} recent entries."
+            }
+        except Exception as e:
+            await limitless_service.close()
+            return {"success": False, "message": str(e)}
+            
+    except Exception as e:
+        logger.error(f"Error testing user Limitless connection: {e}")
+        return {"success": False, "message": "Connection test failed"}
+
+@app.post("/limitless/user/sync")
+async def sync_user_limitless_data(request: UserLimitlessRequest):
+    """Sync Limitless data for a specific user"""
+    try:
+        # Get user's API key
+        api_key = await get_user_limitless_api_key(request.user_id)
+        if not api_key:
+            raise HTTPException(status_code=400, detail="User has not configured Limitless.ai API key")
         
-        await manager.broadcast(json.dumps({
-            "type": "limitless_sync_completed",
-            "status": "success",
-            "synced_count": synced_count
-        }))
+        # Use the existing sync service but with user-specific API key
+        sync_service = get_sync_service(request.user_id)
+        
+        # This would need to be updated to use the user's API key
+        # For now, use the existing sync logic
+        sync_result = await sync_service.incremental_sync()
+        
+        await sync_service.close()
         
         return {
-            "message": f"Synced {synced_count} lifelogs to transcripts",
-            "synced_count": synced_count,
-            "lifelogs": [log.dict() for log in lifelogs]
+            "success": True,
+            "message": f"Sync completed successfully",
+            "total_synced": sync_result.total_synced,
+            "errors": sync_result.errors
         }
-    except LimitlessAPIError as e:
-        logger.error(f"Limitless API error: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        
     except Exception as e:
-        logger.error(f"Error syncing lifelogs: {e}")
+        logger.error(f"Error syncing user Limitless data: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Advanced Sync Endpoints with Cursor Pagination
@@ -306,7 +383,7 @@ async def sync_date_range(request: SyncRequest):
         sync_result = await sync_service.sync_from_date(
             start_date=start_date,
             end_date=end_date,
-            timezone=request.timezone,
+            timezone=request.timezone or "UTC",
             progress_callback=progress_callback
         )
         
@@ -375,11 +452,11 @@ async def incremental_sync(user_id: str):
         }))
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/limitless/sync/stats/{target_date}")
-async def get_sync_stats(target_date: str, timezone: str = "UTC"):
+@app.get("/limitless/sync/stats/{user_id}/{target_date}")
+async def get_sync_stats(user_id: str, target_date: str, timezone: str = "UTC"):
     """Get sync statistics for a specific date"""
     try:
-        sync_service = get_sync_service(request.user_id)
+        sync_service = get_sync_service(user_id)
         target_date_obj = date.fromisoformat(target_date)
         
         stats = await sync_service.get_sync_stats(target_date_obj, timezone)
